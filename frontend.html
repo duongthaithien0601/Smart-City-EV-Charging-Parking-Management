@@ -16,15 +16,25 @@
     />
     <style>
       :root {
-        --bg-top-bottom: #0b111e;
-        --bg-middle: #1e293b;
-        --card-bg: rgba(15, 23, 42, 0.82);
-        --card-border: rgba(148, 163, 184, 0.16);
-        --input-bg: #0f172a;
-        --emerald-main: #10b981;
-        --emerald-dark: #059669;
-        --text-white: #f8fafc;
-        --text-muted: #94a3b8;
+        color-scheme: dark;
+        --bg-page: #141516;
+        --bg-sidebar: #101112;
+        --card-bg: #191a1c;
+        --surface-raised: #222427;
+        --card-border: rgba(237, 237, 237, 0.09);
+        --input-bg: #111315;
+        --emerald-main: #5b8def;
+        --emerald-dark: #5b8def;
+        --accent-ink: #101827;
+        --text-white: #ededed;
+        --text-secondary: #a1a1a6;
+        --text-muted: #85858b;
+        --success: #4cc38a;
+        --warning: #e5ad55;
+        --danger: #e87578;
+        --radius-control: 8px;
+        --radius-card: 14px;
+        --motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
       }
       * {
         box-sizing: border-box;
@@ -35,13 +45,7 @@
           -apple-system,
           BlinkMacSystemFont,
           sans-serif;
-        background: linear-gradient(
-          180deg,
-          var(--bg-top-bottom) 0%,
-          var(--bg-middle) 50%,
-          var(--bg-top-bottom) 100%
-        );
-        background-attachment: fixed;
+        background: var(--bg-page);
         color: var(--text-white);
         min-height: 100vh;
         margin: 0;
@@ -61,17 +65,16 @@
         border: 1px solid var(--card-border);
         border-radius: 16px;
         padding: 36px 32px;
-        box-shadow: 0 24px 48px rgba(0, 0, 0, 0.45);
-        backdrop-filter: blur(12px);
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
       }
       .brand-pill {
         display: inline-flex;
         align-items: center;
         gap: 8px;
-        padding: 6px 14px;
-        border-radius: 999px;
-        background: rgba(16, 185, 129, 0.12);
-        border: 1px solid rgba(16, 185, 129, 0.35);
+        padding: 4px 10px;
+        border-radius: 6px;
+        background: rgba(91, 141, 239, 0.1);
+        border: 1px solid rgba(91, 141, 239, 0.22);
         color: var(--emerald-main);
         font-size: 13px;
         font-weight: 600;
@@ -87,6 +90,9 @@
       .emerald-text {
         color: var(--emerald-main);
       }
+      .page-section h2 .emerald-text {
+        color: var(--text-white);
+      }
       /* Sidebar cố định bên trái */
       .app-layout {
         display: flex;
@@ -95,7 +101,7 @@
       .sidebar {
         width: 250px;
         flex: 0 0 250px;
-        background: rgba(11, 17, 30, 0.95);
+        background: var(--bg-sidebar);
         border-right: 1px solid var(--card-border);
         display: flex;
         flex-direction: column;
@@ -117,16 +123,12 @@
         width: 36px;
         height: 36px;
         border-radius: 10px;
-        background: linear-gradient(
-          135deg,
-          var(--emerald-dark),
-          var(--emerald-main)
-        );
+        background: var(--emerald-main);
         display: flex;
         align-items: center;
         justify-content: center;
-        font-weight: 800;
-        color: #ffffff;
+        font-weight: 600;
+        color: var(--accent-ink);
         font-size: 18px;
       }
       .sidebar-menu {
@@ -140,74 +142,102 @@
         background: transparent;
         border: 1px solid transparent;
         color: var(--text-muted);
-        min-height: 52px;
-        padding: 11px 12px;
-        border-radius: 10px;
-        margin-bottom: 6px;
-        font-size: 14.5px;
+        min-height: 40px;
+        padding: 8px 12px;
+        border-radius: var(--radius-control);
+        margin-bottom: 3px;
+        font-size: 14px;
         font-weight: 500;
         display: flex;
         align-items: center;
         gap: 10px;
-        transition: all 0.18s ease;
+        transition: color 160ms var(--motion-ease), background-color 160ms var(--motion-ease), border-color 160ms var(--motion-ease);
       }
       .nav-item-btn > span:first-child {
-        width: 24px;
-        flex: 0 0 24px;
+        width: 20px;
+        flex: 0 0 20px;
         text-align: center;
-        font-size: 17px;
+        color: currentColor;
         line-height: 1;
+      }
+      .nav-item-btn svg,
+      .sidebar-logout-icon {
+        width: 18px;
+        height: 18px;
+        stroke: currentColor;
+        stroke-width: 1.7;
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        vertical-align: middle;
       }
       .nav-item-btn > span:last-child {
         min-width: 0;
         line-height: 1.25;
       }
       .nav-item-btn:hover {
-        background: rgba(255, 255, 255, 0.05);
+        background: var(--surface-raised);
         color: var(--text-white);
       }
       .nav-item-btn.active {
-        background: var(--emerald-dark);
-        border-color: var(--emerald-main);
-        color: #ffffff;
-        font-weight: 600;
-        box-shadow: 0 4px 14px rgba(16, 185, 129, 0.28);
+        background: rgba(91, 141, 239, 0.14);
+        border-color: rgba(91, 141, 239, 0.18);
+        color: #a9c5ff;
+        font-weight: 500;
       }
       .sidebar-footer {
         padding: 16px 14px;
-        background: rgba(7, 11, 20, 0.9);
+        background: var(--bg-sidebar);
         border-top: 1px solid var(--card-border);
       }
       .main-content {
         margin-left: 250px;
         flex: 1;
         min-width: 0;
-        padding: 30px 38px;
+        padding: 32px clamp(20px, 3vw, 40px);
+        width: calc(100% - 250px);
+        max-width: 1640px;
       }
       /* Card, Form, Input, Nút bấm và Bảng tối */
       .sc-card {
         background: var(--card-bg);
         border: 1px solid var(--card-border);
-        border-radius: 14px;
+        border-radius: var(--radius-card);
         padding: 24px;
         margin-bottom: 24px;
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+        box-shadow: none;
       }
       .kpi-card {
         background: var(--card-bg);
         border: 1px solid var(--card-border);
-        border-radius: 14px;
+        border-radius: var(--radius-card);
         padding: 20px;
         text-align: center;
       }
       .kpi-value {
         font-size: 28px;
-        font-weight: 800;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
         color: var(--text-white);
         margin-top: 6px;
       }
+      .fw-bold {
+        font-weight: 500 !important;
+      }
+      h2.fw-bold {
+        font-size: clamp(26px, 2vw, 32px);
+        line-height: 1.2;
+      }
+      h5.fw-bold,
+      h4.fw-bold {
+        font-size: 16px;
+        line-height: 1.4;
+      }
+      .kpi-value.fw-bold {
+        font-weight: 600 !important;
+      }
       .form-label {
-        color: #cbd5e1;
+        color: var(--text-secondary);
         font-size: 13.5px;
         font-weight: 600;
         margin-bottom: 6px;
@@ -228,48 +258,60 @@
         cursor: pointer;
       }
       .form-control::placeholder {
-        color: #64748b !important;
+        color: #85858b !important;
       }
       .form-control:focus,
       .form-select:focus {
         border-color: var(--emerald-main) !important;
-        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2) !important;
+        box-shadow: 0 0 0 3px rgba(91, 141, 239, 0.22) !important;
       }
       .form-control[readonly] {
-        background-color: rgba(15, 23, 42, 0.5) !important;
+        background-color: #17191b !important;
         color: var(--emerald-main) !important;
         font-weight: 600;
       }
       .btn-emerald {
         background: var(--emerald-dark);
         border: 1px solid var(--emerald-main);
-        color: #ffffff;
+        color: var(--accent-ink);
         font-weight: 600;
         padding: 10px 20px;
         border-radius: 10px;
-        transition: all 0.15s ease;
+        transition: color 150ms var(--motion-ease), background-color 150ms var(--motion-ease), border-color 150ms var(--motion-ease);
       }
       .btn-emerald:hover {
         background: var(--emerald-main);
-        color: #06281e;
+        color: var(--accent-ink);
       }
       .btn-secondary-dark {
-        background: #334155;
-        border: 1px solid rgba(148, 163, 184, 0.25);
+        background: var(--surface-raised);
+        border: 1px solid var(--card-border);
         color: var(--text-white);
         font-weight: 500;
         padding: 8px 14px;
         border-radius: 8px;
+        transition: color 150ms var(--motion-ease), background-color 150ms var(--motion-ease), border-color 150ms var(--motion-ease);
       }
       .btn-secondary-dark:hover {
-        background: #475569;
-        color: #ffffff;
+        background: #2b2d30;
+        color: var(--text-white);
+      }
+      .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
       }
       .vehicle-actions {
         display: flex;
         justify-content: flex-end;
         gap: 8px;
         min-width: 150px;
+      }
+      button:focus-visible,
+      a:focus-visible,
+      input:focus-visible,
+      select:focus-visible {
+        outline: 2px solid var(--emerald-main);
+        outline-offset: 2px;
       }
       .modal-overlay-custom {
         position: fixed;
@@ -279,7 +321,7 @@
         align-items: center;
         justify-content: center;
         padding: 20px;
-        background: rgba(2, 6, 23, 0.78);
+        background: rgba(5, 5, 6, 0.78);
         backdrop-filter: blur(4px);
       }
       .modal-overlay-custom.active {
@@ -289,10 +331,10 @@
         width: min(100%, 520px);
         padding: 24px;
         color: var(--text-white);
-        background: #111827;
+        background: #191a1c;
         border: 1px solid var(--card-border);
         border-radius: 16px;
-        box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55);
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.28);
       }
       .modal-actions-custom {
         display: flex;
@@ -309,63 +351,62 @@
         font-size: 14px;
       }
       .table-dark-custom thead th {
-        background: rgba(15, 23, 42, 0.95);
+        background: #1c1d20;
         color: var(--text-muted);
         font-weight: 600;
-        text-transform: uppercase;
         font-size: 12px;
-        letter-spacing: 0.4px;
-        padding: 13px 14px;
+        letter-spacing: 0;
+        padding: 12px 14px;
         border-bottom: 1px solid var(--card-border);
       }
       .table-dark-custom tbody td {
-        padding: 13px 14px;
-        border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+        padding: 12px 14px;
+        border-bottom: 1px solid rgba(237, 237, 237, 0.07);
         vertical-align: middle;
       }
       .table-dark-custom tbody tr:hover {
-        background: rgba(16, 185, 129, 0.05);
+        background: rgba(91, 141, 239, 0.045);
       }
       /* Nhãn trạng thái dạng viên thuốc (pill) */
       .pill-emerald {
         display: inline-block;
-        padding: 4px 12px;
-        border-radius: 999px;
+        padding: 4px 8px;
+        border-radius: 6px;
         font-size: 12px;
         font-weight: 600;
-        background: rgba(16, 185, 129, 0.15);
-        color: #34d399;
-        border: 1px solid rgba(16, 185, 129, 0.35);
+        background: rgba(76, 195, 138, 0.1);
+        color: var(--success);
+        border: 1px solid rgba(76, 195, 138, 0.18);
       }
       .pill-amber {
         display: inline-block;
-        padding: 4px 12px;
-        border-radius: 999px;
+        padding: 4px 8px;
+        border-radius: 6px;
         font-size: 12px;
         font-weight: 600;
-        background: rgba(245, 158, 11, 0.15);
-        color: #fbbf24;
-        border: 1px solid rgba(245, 158, 11, 0.35);
+        background: rgba(229, 173, 85, 0.1);
+        color: var(--warning);
+        border: 1px solid rgba(229, 173, 85, 0.18);
       }
       .pill-red {
         display: inline-block;
-        padding: 4px 12px;
-        border-radius: 999px;
+        padding: 4px 8px;
+        border-radius: 6px;
         font-size: 12px;
         font-weight: 600;
-        background: rgba(239, 68, 68, 0.15);
-        color: #f87171;
-        border: 1px solid rgba(239, 68, 68, 0.35);
+        background: rgba(232, 117, 120, 0.1);
+        color: var(--danger);
+        border: 1px solid rgba(232, 117, 120, 0.18);
       }
       .pill-slate {
         display: inline-block;
-        padding: 4px 12px;
-        border-radius: 999px;
+        padding: 4px 8px;
+        border-radius: 6px;
         font-size: 12px;
         font-weight: 600;
-        background: rgba(148, 163, 184, 0.15);
-        color: #cbd5e1;
-        border: 1px solid rgba(148, 163, 184, 0.3);
+        background: rgba(161, 161, 166, 0.1);
+        color: #b9b9bf;
+        border: 1px solid rgba(161, 161, 166, 0.16);
       }
       .notice-box {
         padding: 14px 18px;
@@ -375,14 +416,14 @@
         font-size: 14px;
       }
       .notice-success {
-        background: rgba(16, 185, 129, 0.15);
-        border: 1px solid var(--emerald-main);
-        color: #6ee7b7;
+        background: rgba(76, 195, 138, 0.1);
+        border: 1px solid rgba(76, 195, 138, 0.24);
+        color: var(--success);
       }
       .notice-error {
-        background: rgba(239, 68, 68, 0.15);
-        border: 1px solid #ef4444;
-        color: #fca5a5;
+        background: rgba(232, 117, 120, 0.1);
+        border: 1px solid rgba(232, 117, 120, 0.28);
+        color: #f2a3a5;
       }
       .payment-summary-grid {
         display: grid;
@@ -392,11 +433,11 @@
       .payment-summary-grid > div {
         display: flex;
         flex-direction: column;
-        gap: 5px;
+        gap: 4px;
         padding: 12px 14px;
         border: 1px solid var(--card-border);
         border-radius: 10px;
-        background: rgba(15, 23, 42, 0.55);
+        background: #151618;
       }
       .payment-summary-grid span {
         color: var(--text-muted);
@@ -406,10 +447,10 @@
         color: var(--text-white);
       }
       .payment-summary-grid .payment-total {
-        border-color: var(--emerald-main);
+        border-color: rgba(91, 141, 239, 0.45);
       }
       .payment-summary-grid .payment-total strong {
-        color: #6ee7b7;
+        color: #a9c5ff;
         font-size: 18px;
       }
       #stationForm .station-slot-field {
@@ -428,6 +469,7 @@
           flex-basis: 230px;
         }
         .main-content {
+          width: calc(100% - 230px);
           margin-left: 230px;
           padding: 26px 24px;
         }
@@ -444,30 +486,65 @@
       }
       @media (max-width: 767.98px) {
         .sidebar {
-          width: 210px;
-          flex-basis: 210px;
+          width: 68px;
+          flex-basis: 68px;
         }
         .sidebar-brand {
-          padding: 16px 12px;
-          gap: 9px;
+          justify-content: center;
+          padding: 16px 8px;
+        }
+        .sidebar-brand > div:last-child,
+        .sidebar-footer #userRoleBadge,
+        .sidebar-footer #userNameLabel {
+          display: none;
         }
         .sidebar-menu {
-          padding: 14px 8px;
+          padding: 12px 6px;
         }
         .nav-item-btn {
-          padding: 10px 8px;
-          gap: 8px;
-          font-size: 13px;
+          justify-content: center;
+          min-height: 40px;
+          padding: 8px;
+          gap: 0;
+          font-size: 0;
+        }
+        .nav-item-btn > span:first-child {
+          width: 20px;
+          flex-basis: 20px;
         }
         .sidebar-footer {
-          padding: 14px 10px;
+          padding: 12px 6px;
+        }
+        .sidebar-footer button {
+          overflow: hidden;
+          padding: 8px 4px;
+          font-size: 0;
+        }
+        .sidebar-footer button .sidebar-logout-icon {
+          display: inline-block;
         }
         .main-content {
-          margin-left: 210px;
-          padding: 20px 14px;
+          width: calc(100% - 68px);
+          margin-left: 68px;
+          padding: 24px 16px;
         }
         .sc-card {
-          padding: 18px;
+          padding: 20px;
+        }
+        .table-responsive {
+          border: 1px solid var(--card-border);
+          border-radius: 10px;
+        }
+      }
+      @media (max-width: 480px) {
+        .main-content {
+          padding: 20px 12px;
+        }
+        .sc-card {
+          padding: 16px;
+        }
+        .kpi-value {
+          font-size: 24px;
         }
       }
     </style>
@@ -598,7 +675,12 @@
       <aside class="sidebar">
         <div>
           <div class="sidebar-brand">
-            <div class="logo-hexagon">⚡</div>
+            <div class="logo-hexagon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="5.5" y="3.5" width="10" height="15" rx="2" />
+                <path d="M9 7h3M11 9l-2 4h2l-1 3 3-5h-2l1-2M15.5 7.5h1.2a2.3 2.3 0 0 1 2.3 2.3v3.4a2.3 2.3 0 0 1-2.3 2.3M9 21h3" />
+              </svg>
+            </div>
             <div>
               <div class="fw-bold fs-6 text-white">
                 Smart City <span class="emerald-text">EV</span>
@@ -613,65 +695,83 @@
             <button
               id="menu-overview"
               class="nav-item-btn"
+              title="Tổng quan"
+              aria-label="Tổng quan"
               onclick="openPage('overview')"
             >
-              <span>📊</span> <span>Tổng quan</span>
+              <span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 19h16M6 16l4-5 3 2 5-7"/><path d="M15 6h3v3"/></svg></span> <span>Tổng quan</span>
             </button>
             <button
               id="menu-users"
               class="nav-item-btn"
+              title="Quản lý người dùng"
+              aria-label="Quản lý người dùng"
               onclick="openPage('users')"
             >
-              <span>👥</span> <span>Quản lý người dùng</span>
+              <span aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0M16 5.5a3 3 0 0 1 0 5.8M17 14a5 5 0 0 1 3.5 5"/></svg></span> <span>Quản lý người dùng</span>
             </button>
             <button
               id="menu-vehicles"
               class="nav-item-btn"
+              title="Quản lý phương tiện"
+              aria-label="Quản lý phương tiện"
               onclick="openPage('vehicles')"
             >
-              <span>🚗</span> <span>Quản lý phương tiện</span>
+              <span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m5 11 1.5-4h11L19 11l2 2v5h-2v-2H5v2H3v-5z"/><path d="M6.5 11h11M6 14h.01M18 14h.01"/></svg></span> <span>Quản lý phương tiện</span>
             </button>
             <button
               id="menu-stations"
               class="nav-item-btn"
+              title="Trạm sạc và cổng sạc"
+              aria-label="Trạm sạc và cổng sạc"
               onclick="openPage('stations')"
             >
-              <span>🔌</span> <span>Trạm sạc &amp; cổng sạc</span>
+              <span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 3v6M16 3v6M6 9h12v3a6 6 0 0 1-6 6v3M12 18v3"/></svg></span> <span>Trạm sạc &amp; cổng sạc</span>
             </button>
             <button
               id="menu-slots"
               class="nav-item-btn"
+              title="Bãi đỗ xe và chỗ đỗ"
+              aria-label="Bãi đỗ xe và chỗ đỗ"
               onclick="openPage('slots')"
             >
-              <span>🅿️</span> <span>Bãi đỗ xe &amp; chỗ đỗ</span>
+              <span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 20V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v15M2 20h20"/><path d="M10 17V7h4a3 3 0 0 1 0 6h-4"/></svg></span> <span>Bãi đỗ xe &amp; chỗ đỗ</span>
             </button>
             <button
               id="menu-rates"
               class="nav-item-btn"
+              title="Biểu giá"
+              aria-label="Biểu giá"
               onclick="openPage('rates')"
             >
-              <span>💰</span> <span>Biểu giá</span>
+              <span aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M15 8.5c-.7-.7-1.6-1-3-1-1.5 0-2.5.8-2.5 2s1 1.8 2.5 2 2.5.7 2.5 2-1 2-2.5 2c-1.2 0-2.3-.4-3-1.2M12 5.5v13"/></svg></span> <span>Biểu giá</span>
             </button>
             <button
               id="menu-reservations"
               class="nav-item-btn"
+              title="Đặt chỗ"
+              aria-label="Đặt chỗ"
               onclick="openPage('reservations')"
             >
-              <span>📅</span> <span>Đặt chỗ</span>
+              <span aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 10h16M8 14h3"/></svg></span> <span>Đặt chỗ</span>
             </button>
             <button
               id="menu-sessions"
               class="nav-item-btn"
+              title="Phiên sạc"
+              aria-label="Phiên sạc"
               onclick="openPage('sessions')"
             >
-              <span>⚡</span> <span>Phiên sạc</span>
+              <span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m13 2-8 12h6l-1 8 9-13h-6z"/></svg></span> <span>Phiên sạc</span>
             </button>
             <button
               id="menu-billing"
               class="nav-item-btn"
+              title="Thanh toán và phí"
+              aria-label="Thanh toán và phí"
               onclick="openPage('billing')"
             >
-              <span>💳</span> <span>Thanh toán &amp; phí</span>
+              <span aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h3"/></svg></span> <span>Thanh toán &amp; phí</span>
             </button>
           </div>
         </div>
@@ -685,6 +785,7 @@
             Người dùng
           </div>
           <button onclick="handleLogout()" class="btn btn-secondary-dark w-100">
+            <svg class="sidebar-logout-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 17l5-5-5-5M15 12H3"/><path d="M12 3h7a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-7"/></svg>
             Đăng xuất
           </button>
         </div>
@@ -1903,6 +2004,9 @@
     <script>
       let currentUser = null;
       let activePageKey = null;
+      setInterval(() => {
+        if (activePageKey === "reservations") loadReservations();
+      }, 15000);
       let pendingLocationDeleteId = null;
 
       function formatVND(val) {
@@ -1911,40 +2015,8 @@
 
       function formatDateTimeVI(val) {
         if (!val) return "";
-        const raw = String(val).trim();
-        // Flask serializes naive PostgreSQL TIMESTAMP values as RFC dates ending in GMT.
-        // These database columns represent local wall time, so do not let the browser
-        // convert that string from UTC and shift it by the user's UTC offset.
-        const flaskTimestamp = raw.match(
-          /^(?:\\w{3},\\s*)?(\\d{1,2})\\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\\s+(\\d{4})\\s+(\\d{2}):(\\d{2})(?::(\\d{2}))?\\s+GMT$/i,
-        );
-        let d;
-        if (flaskTimestamp) {
-          const months = {
-            jan: 0,
-            feb: 1,
-            mar: 2,
-            apr: 3,
-            may: 4,
-            jun: 5,
-            jul: 6,
-            aug: 7,
-            sep: 8,
-            oct: 9,
-            nov: 10,
-            dec: 11,
-          };
-          d = new Date(
-            Number(flaskTimestamp[3]),
-            months[flaskTimestamp[2].toLowerCase()],
-            Number(flaskTimestamp[1]),
-            Number(flaskTimestamp[4]),
-            Number(flaskTimestamp[5]),
-            Number(flaskTimestamp[6] || 0),
-          );
-        } else {
-          d = new Date(val);
-        }
+        // API trả mốc thời gian có múi giờ; trình duyệt đổi sang giờ của máy đang xem.
+        const d = new Date(val);
         if (isNaN(d.getTime())) return String(val).replace("GMT", "").trim();
         return d.toLocaleString("vi-VN", {
           year: "numeric",
@@ -3323,7 +3395,7 @@
             <td>${
               r.vehicle_departed_at
                 ? '<span class="pill-emerald">Đã rời chỗ</span>'
-                : `<button type="button" class="btn btn-secondary-dark btn-sm" data-reservation-depart="${escapeHtml(r.reservation_id)}">Đã rời chỗ</button>`
+                : `<button type="button" class="btn btn-secondary-dark btn-sm" data-reservation-depart="${escapeHtml(r.reservation_id)}" ${Date.now() < Date.parse(r.start_time) ? "disabled title=\"Khả dụng từ giờ bắt đầu đặt chỗ\"" : ""}>Đã rời chỗ</button>`
             }</td>
         </tr>
     `,

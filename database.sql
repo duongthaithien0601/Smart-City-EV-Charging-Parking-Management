@@ -26,13 +26,10 @@ CREATE TABLE IF NOT EXISTS violation_rates (
     rate_id VARCHAR(20) PRIMARY KEY,
     location_id VARCHAR(20) NOT NULL REFERENCES parking_locations(location_id) ON DELETE CASCADE ON UPDATE CASCADE,
     amount DECIMAL(10, 2) NOT NULL CHECK (amount > 0),
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- 3. Bảng parking_rates
--- Có thể cấu hình nhiều khoảng giờ liền nhau với đơn giá khác nhau.
--- Khi khách đặt qua nhiều khoảng, backend cộng phí từng đoạn; chỉ khoảng
--- thời gian chưa có giá mới khiến vị trí không đủ điều kiện đặt.
 CREATE TABLE IF NOT EXISTS parking_rates (
     rate_id VARCHAR(20) PRIMARY KEY,
     location_id VARCHAR(20) NOT NULL REFERENCES parking_locations(location_id) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -45,17 +42,6 @@ CREATE TABLE IF NOT EXISTS parking_rates (
     CONSTRAINT chk_parking_price_positive CHECK (price_per_hour > 0),
     CONSTRAINT chk_parking_service_type CHECK (service_type IN ('parking', 'both'))
 );
-ALTER TABLE parking_rates
-    ADD COLUMN IF NOT EXISTS service_type VARCHAR(20) NOT NULL DEFAULT 'parking';
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_parking_service_type') THEN
-        ALTER TABLE parking_rates ADD CONSTRAINT chk_parking_service_type
-            CHECK (service_type IN ('parking', 'both'));
-    END IF;
-END $$;
-
-
 -- 4. Bảng charging_rates
 CREATE TABLE IF NOT EXISTS charging_rates (
     rate_id VARCHAR(20) PRIMARY KEY,
@@ -118,10 +104,10 @@ CREATE TABLE IF NOT EXISTS reservations (
     vehicle_id VARCHAR(20) NOT NULL,
     slot_id VARCHAR(20) NOT NULL,
     rate_id VARCHAR(20) NOT NULL,
-    start_time TIMESTAMP NOT NULL,
-    end_time TIMESTAMP NOT NULL,
+    start_time TIMESTAMPTZ NOT NULL,
+    end_time TIMESTAMPTZ NOT NULL,
     total_amount DECIMAL(10, 2) DEFAULT 0.00,
-    vehicle_departed_at TIMESTAMP,
+    vehicle_departed_at TIMESTAMPTZ,
     payment_status VARCHAR(20) NOT NULL DEFAULT 'Pending',
     CONSTRAINT fk_reservations_vehicle FOREIGN KEY (vehicle_id)
         REFERENCES vehicles(vehicle_id) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -140,12 +126,12 @@ CREATE TABLE IF NOT EXISTS charging_sessions (
     vehicle_id VARCHAR(20) NOT NULL,
     charging_station_id VARCHAR(20) NOT NULL,
     rate_id VARCHAR(20) NOT NULL,
-    start_date_time TIMESTAMP NOT NULL,
-    end_date_time TIMESTAMP,
+    start_date_time TIMESTAMPTZ NOT NULL,
+    end_date_time TIMESTAMPTZ,
     energy_consumed_kwh DECIMAL(8, 2),
     session_status VARCHAR(20) NOT NULL DEFAULT 'Completed',
     reservation_id VARCHAR(50),
-    vehicle_departed_at TIMESTAMP,
+    vehicle_departed_at TIMESTAMPTZ,
     CONSTRAINT fk_sessions_vehicle FOREIGN KEY (vehicle_id)
         REFERENCES vehicles(vehicle_id) ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT fk_sessions_station FOREIGN KEY (charging_station_id)
@@ -179,7 +165,7 @@ CREATE TABLE IF NOT EXISTS fees (
 CREATE TABLE IF NOT EXISTS payments (
     payment_id VARCHAR(30) PRIMARY KEY,
     reservation_id VARCHAR(50) NOT NULL UNIQUE,
-    payment_datetime TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    payment_datetime TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     amount DECIMAL(10, 2) NOT NULL,
     payment_method VARCHAR(255) NOT NULL,
     payment_status VARCHAR(20) NOT NULL DEFAULT 'Completed',
@@ -244,7 +230,7 @@ CREATE TRIGGER trg_prevent_overlapping_reservations
 BEFORE INSERT OR UPDATE ON reservations
 FOR EACH ROW EXECUTE FUNCTION fn_prevent_overlapping_reservations();
 
--- Tạo hoặc cập nhật tài khoản quản trị mặc định; không nạp dữ liệu mẫu.
+-- Tạo hoặc cập nhật tài khoản quản trị mặc định.
 INSERT INTO users (user_id, name, email, phone_number, password_hash, role) VALUES
 ('USR001', 'Quản trị Smart City', 'quantrismartcity@gmail.com', '0901234501', '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92', 'system_admin')
 ON CONFLICT (user_id) DO UPDATE SET
@@ -252,10 +238,3 @@ ON CONFLICT (user_id) DO UPDATE SET
     email = EXCLUDED.email,
     phone_number = EXCLUDED.phone_number,
     role = EXCLUDED.role;
-
--- Chạy một lần trên database smart_city hiện có để lưu thời điểm khách xác nhận rời chỗ.
-ALTER TABLE reservations
-    ADD COLUMN IF NOT EXISTS vehicle_departed_at TIMESTAMP;
-
-ALTER TABLE charging_sessions
-    ADD COLUMN IF NOT EXISTS vehicle_departed_at TIMESTAMP;

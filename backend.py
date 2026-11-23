@@ -9,7 +9,7 @@ import secrets
 import time
 import uuid
 import threading
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from functools import wraps
 from flask import Flask, jsonify, request, session, send_file
 import psycopg2
@@ -17,6 +17,15 @@ from psycopg2.extras import RealDictCursor
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "smart_city_emerald_secret_2026")
+
+# Lịch đặt chỗ dùng giờ Việt Nam; lưu mốc thời gian có múi giờ trong PostgreSQL.
+APP_TIMEZONE = timezone(timedelta(hours=7), name="ICT")
+def parse_local_datetime(value: str) -> datetime:
+    """Đọc giờ từ biểu mẫu và trả về datetime có múi giờ Việt Nam."""
+    parsed = datetime.fromisoformat(value)
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=APP_TIMEZONE)
+    return parsed.astimezone(APP_TIMEZONE)
 
 
 def auto_finish_expired_charging_sessions():
@@ -37,7 +46,7 @@ def auto_finish_expired_charging_sessions():
                            AND ss.vehicle_departed_at IS NULL
                            AND ss.end_date_time > r.end_time + INTERVAL '15 minutes')
                     FOR UPDATE OF ss, r, st;
-                """, (datetime.now(),))
+                """, (datetime.now(APP_TIMEZONE),))
                 expired = cur.fetchall()
                 for charging in expired:
                     cutoff = charging["end_time"] + timedelta(minutes=15)
@@ -196,16 +205,13 @@ def calculate_dynamic_parking_fee(start_dt: datetime, end_dt: datetime, rates_li
     total_fee = 0.0
     cur = start_dt
     while cur < end_dt:
-        rate = rate_for_time(rates_list, cur.time(), "price_per_hour")
+        rate = rate_for_time(rates_list, cur.time().replace(tzinfo=None), "price_per_hour")
         if not rate:
             raise ValueError("Chưa có biểu giá đỗ xe bao phủ toàn bộ khoảng thời gian đã chọn.")
-
-        # Chia tại mốc bắt đầu/kết thúc gần nhất của mọi biểu giá. Nhờ vậy,
-        # một lượt đặt có thể đi qua nhiều khung và mỗi đoạn dùng đúng đơn giá.
         nxt = end_dt
         for candidate in rates_list:
             for boundary in (candidate["effective_from"], candidate["effective_to"]):
-                boundary_dt = datetime.combine(cur.date(), boundary)
+                boundary_dt = datetime.combine(cur.date(), boundary).replace(tzinfo=APP_TIMEZONE)
                 if boundary_dt <= cur:
                     boundary_dt += timedelta(days=1)
                 if boundary_dt < nxt:
@@ -886,11 +892,11 @@ def api_slots():
         return jsonify({"status": "error", "message": "Vui lòng chọn đủ thời gian bắt đầu và kết thúc."}), 400
     if has_window:
         try:
-            start_dt = datetime.fromisoformat(start_value)
-            end_dt = datetime.fromisoformat(end_value)
+            start_dt = parse_local_datetime(start_value)
+            end_dt = parse_local_datetime(end_value)
         except ValueError:
             return jsonify({"status": "error", "message": "Khoảng thời gian tìm kiếm không hợp lệ."}), 400
-        if start_dt <= datetime.now() or end_dt <= start_dt:
+        if start_dt <= datetime.now(APP_TIMEZONE) or end_dt <= start_dt:
             return jsonify({"status": "error", "message": "Thời gian bắt đầu phải ở tương lai và thời gian kết thúc phải sau thời gian bắt đầu."}), 400
     else:
         start_dt = end_dt = None
@@ -931,7 +937,7 @@ def api_slots():
                                              ss.end_date_time,
                                              COALESCE((SELECT r.end_time FROM reservations r WHERE r.reservation_id=ss.reservation_id), ss.end_date_time)
                                          ) + INTERVAL '15 minutes'
-                                         ELSE 'infinity'::timestamp END
+                                         ELSE 'infinity'::timestamptz END
                                 ) > %s
                                 AND (ss.session_status = 'Charging' OR ss.vehicle_departed_at IS NULL)
                           )
@@ -1167,12 +1173,12 @@ def api_reservations():
                 end_str = (data.get("end_time") or "").replace("T", " ")
 
                 try:
-                    start_dt = datetime.fromisoformat(start_str)
-                    end_dt = datetime.fromisoformat(end_str)
+                    start_dt = parse_local_datetime(start_str)
+                    end_dt = parse_local_datetime(end_str)
                 except ValueError:
                     return jsonify({"status": "error", "message": "Thời gian nhập vào không hợp lệ."}), 400
 
-                if start_dt <= datetime.now():
+                if start_dt <= datetime.now(APP_TIMEZONE):
                     return jsonify({"status": "error", "message": "Thời gian bắt đầu đặt chỗ phải ở tương lai."}), 400
                 if end_dt <= start_dt:
                     return jsonify({"status": "error", "message": "Thời gian kết thúc phải sau thời gian bắt đầu."}), 400
@@ -1213,22 +1219,15 @@ def api_reservations():
 
                 service_type = "both" if slot_row["slot_type"] == "Charging" else "parking"
                 rates_list = latest_rates(cur, "parking_rates", slot_row["location_id"], service_type)
-                rate_row = rate_for_time(rates_list, start_dt.time(), "price_per_hour")
+                rate_row = rate_for_time(rates_list, start_dt.astimezone(APP_TIMEZONE).time().replace(tzinfo=None), "price_per_hour")
                 if not rate_row:
                     return jsonify({"status": "error", "message": "Chưa cấu hình đơn giá đỗ xe cho thời điểm bắt đầu."}), 409
                 rate_id = rate_row["rate_id"]
                 dynamic_parking_fee = calculate_dynamic_parking_fee(start_dt, end_dt, rates_list)
 
-                violation_fee = 0.0
-                if veh_row and slot_row and veh_row["vehicle_type"] == "ICE" and slot_row["slot_type"] == "Charging":
-                    cur.execute("SELECT amount FROM violation_rates WHERE location_id=%s ORDER BY created_at DESC, rate_id DESC LIMIT 1;", (slot_row["location_id"],))
-                    cs_row = cur.fetchone()
-                    if not cs_row:
-                        return jsonify({"status": "error", "message": "Chỗ đỗ sạc chưa được cấu hình mức phí vi phạm."}), 409
-                    violation_fee = float(cs_row["amount"])
-
-                # total_amount stores parking only; charging and violation fees are
-                # calculated separately when the customer pays.
+                # Phí vi phạm chỉ phát sinh nếu xe chưa rời chỗ sau thời gian
+                # kết thúc đặt chỗ cộng thêm 15 phút; đặt xe xăng vào chỗ sạc
+                # không tự tạo phí ngay lúc đặt.
                 total_initial = dynamic_parking_fee
 
                 cur.execute("""
@@ -1236,19 +1235,9 @@ def api_reservations():
                     VALUES (%s, %s, %s, %s, %s, %s, %s, 'Pending');
                 """, (res_id, vehicle_id, slot_id, rate_id, start_str, end_str, total_initial))
 
-                if violation_fee > 0:
-                    fee_id = "FEE" + uuid.uuid4().hex[:12].upper()
-                    duration_mins = max(0, int((end_dt - start_dt).total_seconds() / 60))
-                    cur.execute("""
-                        INSERT INTO fees (fee_id, reservation_id, fee_type, amount, excess_duration)
-                        VALUES (%s, %s, 'Violation', %s, %s);
-                    """, (fee_id, res_id, violation_fee, duration_mins))
-
             conn.commit()
 
         msg = f"Đặt chỗ thành công. Chi phí đỗ xe tạm tính: {int(dynamic_parking_fee):,} VNĐ. Sau khi hết thời gian đặt chỗ, vui lòng di chuyển xe trong vòng 15 phút để tránh phát sinh phí vi phạm."
-        if violation_fee > 0:
-            msg += f" Xe xăng đỗ tại chỗ sạc điện bị áp phí vi phạm: {int(violation_fee):,} VNĐ."
         return jsonify({"status": "success", "message": msg, "reservation_id": res_id}), 201
     except ValueError as e:
         return jsonify({"status": "error", "message": str(e)}), 409
@@ -1265,7 +1254,7 @@ def api_depart_reservation(reservation_id):
         with get_db_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute("""
-                    SELECT r.reservation_id, r.end_time, r.payment_status, r.vehicle_departed_at,
+                    SELECT r.reservation_id, r.start_time, r.end_time, r.payment_status, r.vehicle_departed_at,
                            v.user_id, s.slot_id, s.location_id
                     FROM reservations r
                     JOIN vehicles v ON v.vehicle_id=r.vehicle_id
@@ -1282,13 +1271,18 @@ def api_depart_reservation(reservation_id):
                 if reservation["vehicle_departed_at"] is not None:
                     return jsonify({"status": "error", "message": "Mã đặt chỗ này đã được xác nhận rời chỗ."}), 409
 
+                now = datetime.now(APP_TIMEZONE)
+                if now < reservation["start_time"]:
+                    return jsonify({"status": "error", "message": "Chỉ có thể xác nhận rời chỗ khi đã đến giờ bắt đầu đặt chỗ."}), 409
+
                 cur.execute("SELECT 1 FROM charging_sessions WHERE reservation_id=%s AND session_status='Charging' LIMIT 1;", (reservation_id,))
                 if cur.fetchone():
                     return jsonify({"status": "error", "message": "Phiên sạc vẫn đang hoạt động. Hãy kết thúc sạc trước khi xác nhận rời chỗ."}), 409
 
-                now = datetime.now()
+                cur.execute("UPDATE reservations SET vehicle_departed_at=%s WHERE reservation_id=%s RETURNING vehicle_departed_at;", (now, reservation_id))
+                departed_at = cur.fetchone()["vehicle_departed_at"]
                 grace_end = reservation["end_time"] + timedelta(minutes=15)
-                late_seconds = max(0, (now - grace_end).total_seconds())
+                late_seconds = max(0, (departed_at - grace_end).total_seconds())
                 late_minutes = math.ceil(late_seconds / 60) if late_seconds else 0
                 violation_amount = 0.0
                 if late_minutes > 0:
@@ -1305,8 +1299,7 @@ def api_depart_reservation(reservation_id):
                         );
                     """, ("FEE" + uuid.uuid4().hex[:12].upper(), reservation_id, violation_amount, late_minutes, reservation_id))
 
-                cur.execute("UPDATE reservations SET vehicle_departed_at=%s WHERE reservation_id=%s;", (now, reservation_id))
-                cur.execute("UPDATE charging_sessions SET vehicle_departed_at=%s WHERE reservation_id=%s AND session_status='Completed' AND vehicle_departed_at IS NULL;", (now, reservation_id))
+                cur.execute("UPDATE charging_sessions SET vehicle_departed_at=%s WHERE reservation_id=%s AND session_status='Completed' AND vehicle_departed_at IS NULL;", (departed_at, reservation_id))
                 cur.execute("UPDATE slots SET status='Available' WHERE slot_id=%s AND status='Occupied';", (reservation["slot_id"],))
             conn.commit()
         if violation_amount:
@@ -1389,7 +1382,7 @@ def api_sessions():
                     return jsonify({"status": "error", "message": "Chỉ được bắt đầu sạc với mã đặt chỗ đang chờ thanh toán."}), 409
                 if reservation["vehicle_departed_at"] is not None:
                     return jsonify({"status": "error", "message": "Mã đặt chỗ này đã được xác nhận rời chỗ nên không thể bắt đầu sạc."}), 409
-                now = datetime.now()
+                now = datetime.now(APP_TIMEZONE)
                 if now < reservation["start_time"]:
                     return jsonify({"status": "error", "message": "Chưa đến giờ bắt đầu đặt chỗ; bạn hãy quay lại đúng giờ để sạc."}), 409
                 if now >= reservation["end_time"]:
@@ -1411,11 +1404,11 @@ def api_sessions():
                 if station["status"] != "Online":
                     return jsonify({"status": "error", "message": "Trụ sạc tại vị trí đặt chỗ hiện không sẵn sàng."}), 409
 
-                now = datetime.now()
+                now = datetime.now(APP_TIMEZONE)
                 station_id = station["station_id"]
                 cur.execute("SELECT s.location_id FROM charging_stations st JOIN slots s ON s.slot_id=st.slot_id WHERE st.station_id=%s;", (station_id,))
                 station_location = cur.fetchone()
-                rate = rate_for_time(latest_rates(cur, "charging_rates", station_location["location_id"]), now.time())
+                rate = rate_for_time(latest_rates(cur, "charging_rates", station_location["location_id"]), now.astimezone(APP_TIMEZONE).time().replace(tzinfo=None))
                 if not rate:
                     return jsonify({"status": "error", "message": "Chưa cấu hình đơn giá sạc cho thời điểm hiện tại."}), 409
 
@@ -1465,7 +1458,7 @@ def api_finish_session(session_id):
                 if charging["session_status"] != "Charging":
                     return jsonify({"status": "error", "message": "Phiên sạc này đã được kết thúc."}), 409
 
-                end_dt = datetime.now()
+                end_dt = datetime.now(APP_TIMEZONE)
                 duration_hours = max(0.0, (end_dt - charging["start_date_time"]).total_seconds() / 3600.0)
                 energy_kwh = round(max(0.5, duration_hours * float(charging["kw_rate"]) * 0.85), 2)
                 cur.execute("SELECT rate_per_kwh FROM charging_rates WHERE rate_id = %s;", (charging["rate_id"],))
@@ -1499,7 +1492,7 @@ def api_billing():
                 cur.execute("""
                     SELECT r.reservation_id, r.vehicle_id, r.slot_id, r.start_time,
                            r.end_time, r.total_amount AS parking_cost, r.vehicle_departed_at, s.slot_type,
-                           s.position, pl.location_name, v.plate_number
+                           s.position, pl.location_name, v.plate_number, v.vehicle_type
                     FROM reservations r
                     JOIN vehicles v ON v.vehicle_id=r.vehicle_id
                     JOIN slots s ON s.slot_id=r.slot_id
@@ -1507,7 +1500,7 @@ def api_billing():
                     WHERE v.user_id=%s AND r.payment_status='Pending'
                       AND r.start_time <= %s AND r.vehicle_departed_at IS NOT NULL
                     ORDER BY r.start_time;
-                """, (user["user_id"], datetime.now()))
+                """, (user["user_id"], datetime.now(APP_TIMEZONE)))
                 payable = []
                 for reservation in cur.fetchall():
                     cur.execute("""
@@ -1518,7 +1511,9 @@ def api_billing():
                         WHERE ss.reservation_id=%s AND ss.session_status='Completed';
                     """, (reservation["reservation_id"],))
                     charging = cur.fetchone()
-                    if reservation["slot_type"] == "Charging" and charging["completed_sessions"] == 0:
+                    if (reservation["slot_type"] == "Charging"
+                            and reservation["vehicle_type"] == "EV"
+                            and charging["completed_sessions"] == 0):
                         continue
                     cur.execute("SELECT COALESCE(SUM(amount), 0) AS amount FROM fees WHERE reservation_id=%s;", (reservation["reservation_id"],))
                     violation = cur.fetchone()
@@ -1546,7 +1541,8 @@ def api_pay():
             with conn.cursor() as cur:
                 cur.execute("""
                     SELECT r.reservation_id, r.total_amount AS parking_cost, r.slot_id,
-                           r.start_time, r.end_time, r.vehicle_departed_at, r.payment_status, v.user_id, s.slot_type
+                           r.start_time, r.end_time, r.vehicle_departed_at, r.payment_status,
+                           v.user_id, s.slot_type, v.vehicle_type
                     FROM reservations r
                     JOIN vehicles v ON r.vehicle_id = v.vehicle_id
                     JOIN slots s ON s.slot_id=r.slot_id
@@ -1564,11 +1560,13 @@ def api_pay():
                     return jsonify({"status": "error", "message": "Mã đặt chỗ này không còn ở trạng thái chờ thanh toán."}), 409
                 if res["vehicle_departed_at"] is None:
                     return jsonify({"status": "error", "message": "Hãy xác nhận đã rời chỗ trước khi thanh toán."}), 409
-                if res["start_time"] > datetime.now():
+                if res["start_time"] > datetime.now(APP_TIMEZONE):
                     return jsonify({"status": "error", "message": "Chưa đến giờ bắt đầu đặt chỗ nên chưa thể thanh toán."}), 409
                 cur.execute("SELECT COALESCE(SUM(ROUND(ss.energy_consumed_kwh * cr.rate_per_kwh, 0)), 0) AS amount, COUNT(*) AS completed_sessions FROM charging_sessions ss JOIN charging_rates cr ON cr.rate_id=ss.rate_id WHERE ss.reservation_id=%s AND ss.session_status='Completed';", (res_id,))
                 charging = cur.fetchone()
-                if res["slot_type"] == "Charging" and charging["completed_sessions"] == 0:
+                if (res["slot_type"] == "Charging"
+                        and res["vehicle_type"] == "EV"
+                        and charging["completed_sessions"] == 0):
                     return jsonify({"status": "error", "message": "Mã đặt chỗ có sạc điện chỉ được thanh toán sau khi kết thúc phiên sạc."}), 409
                 cur.execute("SELECT COALESCE(SUM(amount), 0) AS amount FROM fees WHERE reservation_id=%s;", (res_id,))
                 violation = cur.fetchone()

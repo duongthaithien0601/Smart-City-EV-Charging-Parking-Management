@@ -1,0 +1,3580 @@
+<!-- GIAO DIỆN SMART CITY EV -->
+
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Smart City – Quản lý Trạm sạc & Bãi đỗ xe thông minh</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg-top-bottom: #0b111e;
+        --bg-middle: #1e293b;
+        --card-bg: rgba(15, 23, 42, 0.82);
+        --card-border: rgba(148, 163, 184, 0.16);
+        --input-bg: #0f172a;
+        --emerald-main: #10b981;
+        --emerald-dark: #059669;
+        --text-white: #f8fafc;
+        --text-muted: #94a3b8;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family:
+          "Inter",
+          -apple-system,
+          BlinkMacSystemFont,
+          sans-serif;
+        background: linear-gradient(
+          180deg,
+          var(--bg-top-bottom) 0%,
+          var(--bg-middle) 50%,
+          var(--bg-top-bottom) 100%
+        );
+        background-attachment: fixed;
+        color: var(--text-white);
+        min-height: 100vh;
+        margin: 0;
+      }
+      /* Trang Đăng nhập / Đăng ký ở giữa màn hình */
+      .auth-wrapper {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+      }
+      .auth-card {
+        width: 100%;
+        max-width: 420px;
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        border-radius: 16px;
+        padding: 36px 32px;
+        box-shadow: 0 24px 48px rgba(0, 0, 0, 0.45);
+        backdrop-filter: blur(12px);
+      }
+      .brand-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 14px;
+        border-radius: 999px;
+        background: rgba(16, 185, 129, 0.12);
+        border: 1px solid rgba(16, 185, 129, 0.35);
+        color: var(--emerald-main);
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 16px;
+      }
+      .brand-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--emerald-main);
+        display: inline-block;
+      }
+      .emerald-text {
+        color: var(--emerald-main);
+      }
+      /* Sidebar cố định bên trái */
+      .app-layout {
+        display: flex;
+        min-height: 100vh;
+      }
+      .sidebar {
+        width: 250px;
+        flex: 0 0 250px;
+        background: rgba(11, 17, 30, 0.95);
+        border-right: 1px solid var(--card-border);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 100;
+      }
+      .sidebar-brand {
+        padding: 20px 18px;
+        border-bottom: 1px solid var(--card-border);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .logo-hexagon {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        background: linear-gradient(
+          135deg,
+          var(--emerald-dark),
+          var(--emerald-main)
+        );
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        color: #ffffff;
+        font-size: 18px;
+      }
+      .sidebar-menu {
+        padding: 18px 12px;
+        flex: 1;
+        overflow-y: auto;
+      }
+      .nav-item-btn {
+        width: 100%;
+        text-align: left;
+        background: transparent;
+        border: 1px solid transparent;
+        color: var(--text-muted);
+        min-height: 52px;
+        padding: 11px 12px;
+        border-radius: 10px;
+        margin-bottom: 6px;
+        font-size: 14.5px;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        transition: all 0.18s ease;
+      }
+      .nav-item-btn > span:first-child {
+        width: 24px;
+        flex: 0 0 24px;
+        text-align: center;
+        font-size: 17px;
+        line-height: 1;
+      }
+      .nav-item-btn > span:last-child {
+        min-width: 0;
+        line-height: 1.25;
+      }
+      .nav-item-btn:hover {
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--text-white);
+      }
+      .nav-item-btn.active {
+        background: var(--emerald-dark);
+        border-color: var(--emerald-main);
+        color: #ffffff;
+        font-weight: 600;
+        box-shadow: 0 4px 14px rgba(16, 185, 129, 0.28);
+      }
+      .sidebar-footer {
+        padding: 16px 14px;
+        background: rgba(7, 11, 20, 0.9);
+        border-top: 1px solid var(--card-border);
+      }
+      .main-content {
+        margin-left: 250px;
+        flex: 1;
+        min-width: 0;
+        padding: 30px 38px;
+      }
+      /* Card, Form, Input, Nút bấm và Bảng tối */
+      .sc-card {
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        border-radius: 14px;
+        padding: 24px;
+        margin-bottom: 24px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+      }
+      .kpi-card {
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        border-radius: 14px;
+        padding: 20px;
+        text-align: center;
+      }
+      .kpi-value {
+        font-size: 28px;
+        font-weight: 800;
+        color: var(--text-white);
+        margin-top: 6px;
+      }
+      .form-label {
+        color: #cbd5e1;
+        font-size: 13.5px;
+        font-weight: 600;
+        margin-bottom: 6px;
+      }
+      .form-control,
+      .form-select {
+        background-color: var(--input-bg) !important;
+        border: 1px solid rgba(148, 163, 184, 0.25) !important;
+        color: var(--text-white) !important;
+        border-radius: 10px;
+        padding: 10px 14px;
+        font-size: 14px;
+      }
+      input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+      input[type="time"]::-webkit-calendar-picker-indicator {
+        filter: invert(1);
+        opacity: 1;
+        cursor: pointer;
+      }
+      .form-control::placeholder {
+        color: #64748b !important;
+      }
+      .form-control:focus,
+      .form-select:focus {
+        border-color: var(--emerald-main) !important;
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2) !important;
+      }
+      .form-control[readonly] {
+        background-color: rgba(15, 23, 42, 0.5) !important;
+        color: var(--emerald-main) !important;
+        font-weight: 600;
+      }
+      .btn-emerald {
+        background: var(--emerald-dark);
+        border: 1px solid var(--emerald-main);
+        color: #ffffff;
+        font-weight: 600;
+        padding: 10px 20px;
+        border-radius: 10px;
+        transition: all 0.15s ease;
+      }
+      .btn-emerald:hover {
+        background: var(--emerald-main);
+        color: #06281e;
+      }
+      .btn-secondary-dark {
+        background: #334155;
+        border: 1px solid rgba(148, 163, 184, 0.25);
+        color: var(--text-white);
+        font-weight: 500;
+        padding: 8px 14px;
+        border-radius: 8px;
+      }
+      .btn-secondary-dark:hover {
+        background: #475569;
+        color: #ffffff;
+      }
+      .vehicle-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        min-width: 150px;
+      }
+      .modal-overlay-custom {
+        position: fixed;
+        inset: 0;
+        z-index: 2000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        background: rgba(2, 6, 23, 0.78);
+        backdrop-filter: blur(4px);
+      }
+      .modal-overlay-custom.active {
+        display: flex;
+      }
+      .modal-card-custom {
+        width: min(100%, 520px);
+        padding: 24px;
+        color: var(--text-white);
+        background: #111827;
+        border: 1px solid var(--card-border);
+        border-radius: 16px;
+        box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55);
+      }
+      .modal-actions-custom {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 22px;
+      }
+      /* Bảng dữ liệu nền tối */
+      .table-dark-custom {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        color: var(--text-white);
+        font-size: 14px;
+      }
+      .table-dark-custom thead th {
+        background: rgba(15, 23, 42, 0.95);
+        color: var(--text-muted);
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 12px;
+        letter-spacing: 0.4px;
+        padding: 13px 14px;
+        border-bottom: 1px solid var(--card-border);
+      }
+      .table-dark-custom tbody td {
+        padding: 13px 14px;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+        vertical-align: middle;
+      }
+      .table-dark-custom tbody tr:hover {
+        background: rgba(16, 185, 129, 0.05);
+      }
+      /* Nhãn trạng thái dạng viên thuốc (pill) */
+      .pill-emerald {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 600;
+        background: rgba(16, 185, 129, 0.15);
+        color: #34d399;
+        border: 1px solid rgba(16, 185, 129, 0.35);
+      }
+      .pill-amber {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 600;
+        background: rgba(245, 158, 11, 0.15);
+        color: #fbbf24;
+        border: 1px solid rgba(245, 158, 11, 0.35);
+      }
+      .pill-red {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 600;
+        background: rgba(239, 68, 68, 0.15);
+        color: #f87171;
+        border: 1px solid rgba(239, 68, 68, 0.35);
+      }
+      .pill-slate {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 600;
+        background: rgba(148, 163, 184, 0.15);
+        color: #cbd5e1;
+        border: 1px solid rgba(148, 163, 184, 0.3);
+      }
+      .notice-box {
+        padding: 14px 18px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        font-weight: 500;
+        font-size: 14px;
+      }
+      .notice-success {
+        background: rgba(16, 185, 129, 0.15);
+        border: 1px solid var(--emerald-main);
+        color: #6ee7b7;
+      }
+      .notice-error {
+        background: rgba(239, 68, 68, 0.15);
+        border: 1px solid #ef4444;
+        color: #fca5a5;
+      }
+      .payment-summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+        gap: 12px;
+      }
+      .payment-summary-grid > div {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        padding: 12px 14px;
+        border: 1px solid var(--card-border);
+        border-radius: 10px;
+        background: rgba(15, 23, 42, 0.55);
+      }
+      .payment-summary-grid span {
+        color: var(--text-muted);
+        font-size: 13px;
+      }
+      .payment-summary-grid strong {
+        color: var(--text-white);
+      }
+      .payment-summary-grid .payment-total {
+        border-color: var(--emerald-main);
+      }
+      .payment-summary-grid .payment-total strong {
+        color: #6ee7b7;
+        font-size: 18px;
+      }
+      #stationForm .station-slot-field {
+        width: 220px;
+      }
+      #stationForm .station-power-field {
+        width: 150px;
+      }
+      #stationForm .station-save-button {
+        width: 260px;
+        text-align: center;
+      }
+      @media (max-width: 1199.98px) {
+        .sidebar {
+          width: 230px;
+          flex-basis: 230px;
+        }
+        .main-content {
+          margin-left: 230px;
+          padding: 26px 24px;
+        }
+        #stationForm .station-slot-field,
+        #stationForm .station-power-field {
+          width: 100%;
+        }
+        #stationForm .station-actions {
+          width: 100%;
+        }
+        #stationForm .station-save-button {
+          width: 100%;
+        }
+      }
+      @media (max-width: 767.98px) {
+        .sidebar {
+          width: 210px;
+          flex-basis: 210px;
+        }
+        .sidebar-brand {
+          padding: 16px 12px;
+          gap: 9px;
+        }
+        .sidebar-menu {
+          padding: 14px 8px;
+        }
+        .nav-item-btn {
+          padding: 10px 8px;
+          gap: 8px;
+          font-size: 13px;
+        }
+        .sidebar-footer {
+          padding: 14px 10px;
+        }
+        .main-content {
+          margin-left: 210px;
+          padding: 20px 14px;
+        }
+        .sc-card {
+          padding: 18px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ==================== 1. TRANG ĐĂNG NHẬP / ĐĂNG KÝ ==================== -->
+    <div id="authScreen" class="auth-wrapper">
+      <div class="auth-card">
+        <div class="text-center mb-4">
+          <div class="brand-pill">
+            <span class="brand-dot"></span>
+            <span>Hệ thống Đô thị Thông minh</span>
+          </div>
+          <h3 class="fw-bold mb-1">
+            Smart City <span class="emerald-text">EV</span>
+          </h3>
+          <p class="small mb-0" style="color: var(--text-muted)">
+            Quản lý Trạm sạc &amp; Bãi đỗ xe thông minh
+          </p>
+        </div>
+
+        <div id="authAlert" class="notice-box d-none"></div>
+
+        <!-- Form Đăng nhập -->
+        <form id="loginForm" onsubmit="submitLogin(event)" autocomplete="off">
+          <div class="mb-3">
+            <label class="form-label">Email</label>
+            <input
+              type="email"
+              id="loginEmail"
+              class="form-control"
+              placeholder="Nhập địa chỉ email"
+              value=""
+              required
+            />
+          </div>
+          <div class="mb-4">
+            <label class="form-label">Mật khẩu</label>
+            <input
+              type="password"
+              id="loginPassword"
+              class="form-control"
+              placeholder="Nhập mật khẩu"
+              value=""
+              required
+            />
+          </div>
+          <button type="submit" class="btn btn-emerald w-100 mb-3">
+            Đăng nhập
+          </button>
+          <div class="text-center">
+            <span class="small" style="color: var(--text-muted)"
+              >Chưa có tài khoản?
+            </span>
+            <a
+              href="javascript:void(0)"
+              onclick="toggleAuthMode('register')"
+              class="emerald-text fw-semibold text-decoration-none"
+              >Đăng ký</a
+            >
+          </div>
+        </form>
+
+        <!-- Form Đăng ký -->
+        <form
+          id="registerForm"
+          class="d-none"
+          onsubmit="submitRegister(event)"
+          autocomplete="off"
+        >
+          <div class="mb-3">
+            <label class="form-label">Họ và tên</label>
+            <input
+              type="text"
+              id="regName"
+              class="form-control"
+              placeholder="Nhập họ và tên"
+              required
+            />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Email</label>
+            <input
+              type="email"
+              id="regEmail"
+              class="form-control"
+              placeholder="Nhập địa chỉ email"
+              required
+            />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Số điện thoại</label>
+            <input
+              type="text"
+              id="regPhone"
+              class="form-control"
+              placeholder="Nhập số điện thoại"
+              required
+            />
+          </div>
+          <div class="mb-4">
+            <label class="form-label">Mật khẩu</label>
+            <input
+              type="password"
+              id="regPassword"
+              class="form-control"
+              placeholder="Nhập mật khẩu"
+              required
+            />
+          </div>
+          <button type="submit" class="btn btn-emerald w-100 mb-3">
+            Đăng ký
+          </button>
+          <div class="text-center">
+            <a
+              href="javascript:void(0)"
+              onclick="toggleAuthMode('login')"
+              class="emerald-text fw-semibold text-decoration-none"
+              >Quay lại Đăng nhập</a
+            >
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ==================== 2. BỐ CỤC CHÍNH (SIDEBAR TRÁI + NỘI DUNG PHẢI) ==================== -->
+    <div id="appScreen" class="app-layout d-none">
+      <aside class="sidebar">
+        <div>
+          <div class="sidebar-brand">
+            <div class="logo-hexagon">⚡</div>
+            <div>
+              <div class="fw-bold fs-6 text-white">
+                Smart City <span class="emerald-text">EV</span>
+              </div>
+              <div style="font-size: 12px; color: var(--text-muted)">
+                Trạm sạc &amp; Bãi đỗ xe
+              </div>
+            </div>
+          </div>
+
+          <div class="sidebar-menu">
+            <button
+              id="menu-overview"
+              class="nav-item-btn"
+              onclick="openPage('overview')"
+            >
+              <span>📊</span> <span>Tổng quan</span>
+            </button>
+            <button
+              id="menu-users"
+              class="nav-item-btn"
+              onclick="openPage('users')"
+            >
+              <span>👥</span> <span>Quản lý người dùng</span>
+            </button>
+            <button
+              id="menu-vehicles"
+              class="nav-item-btn"
+              onclick="openPage('vehicles')"
+            >
+              <span>🚗</span> <span>Quản lý phương tiện</span>
+            </button>
+            <button
+              id="menu-stations"
+              class="nav-item-btn"
+              onclick="openPage('stations')"
+            >
+              <span>🔌</span> <span>Trạm sạc &amp; cổng sạc</span>
+            </button>
+            <button
+              id="menu-slots"
+              class="nav-item-btn"
+              onclick="openPage('slots')"
+            >
+              <span>🅿️</span> <span>Bãi đỗ xe &amp; chỗ đỗ</span>
+            </button>
+            <button
+              id="menu-rates"
+              class="nav-item-btn"
+              onclick="openPage('rates')"
+            >
+              <span>💰</span> <span>Biểu giá</span>
+            </button>
+            <button
+              id="menu-reservations"
+              class="nav-item-btn"
+              onclick="openPage('reservations')"
+            >
+              <span>📅</span> <span>Đặt chỗ</span>
+            </button>
+            <button
+              id="menu-sessions"
+              class="nav-item-btn"
+              onclick="openPage('sessions')"
+            >
+              <span>⚡</span> <span>Phiên sạc</span>
+            </button>
+            <button
+              id="menu-billing"
+              class="nav-item-btn"
+              onclick="openPage('billing')"
+            >
+              <span>💳</span> <span>Thanh toán &amp; phí</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Phần TÀI KHOẢN ở dưới cùng: chỉ hiển thị Vai trò, Họ tên và nút Đăng xuất -->
+        <div class="sidebar-footer">
+          <div class="pill-emerald mb-2" id="userRoleBadge">
+            Quản trị hệ thống
+          </div>
+          <div class="fw-bold text-white text-truncate mb-3" id="userNameLabel">
+            Người dùng
+          </div>
+          <button onclick="handleLogout()" class="btn btn-secondary-dark w-100">
+            Đăng xuất
+          </button>
+        </div>
+      </aside>
+
+      <main class="main-content">
+        <div id="globalNotice" class="notice-box d-none"></div>
+
+        <!-- 1. TỔNG QUAN -->
+        <section id="page-overview" class="page-section d-none">
+          <div class="mb-4">
+            <div>
+              <h2 class="fw-bold mb-1">
+                Tổng quan <span class="emerald-text">Hệ thống</span>
+              </h2>
+              <p class="mb-0" style="color: var(--text-muted)">
+                Thống kê bãi đỗ, vị trí đỗ xe và tình trạng trụ sạc
+              </p>
+            </div>
+          </div>
+
+          <div class="row g-4">
+            <div class="col-12">
+              <div class="sc-card mb-0">
+                <h5 class="fw-bold mb-3">
+                  Tổng thu từ các giao dịch đã thanh toán
+                </h5>
+                <table class="table-dark-custom">
+                  <tbody>
+                    <tr>
+                      <th>Thu từ đỗ xe</th>
+                      <td class="text-end fw-bold" id="overviewParkingRevenue">
+                        0 ₫
+                      </td>
+                    </tr>
+                    <tr>
+                      <th>Thu từ đỗ xe và sạc điện</th>
+                      <td
+                        class="text-end fw-bold"
+                        id="overviewParkingChargingRevenue"
+                      >
+                        0 ₫
+                      </td>
+                    </tr>
+                    <tr>
+                      <th>Thu từ phí vi phạm</th>
+                      <td
+                        class="text-end fw-bold"
+                        id="overviewViolationRevenue"
+                      >
+                        0 ₫
+                      </td>
+                    </tr>
+                    <tr>
+                      <th class="fs-5">Tổng thu</th>
+                      <td
+                        class="text-end fw-bold fs-5 emerald-text"
+                        id="overviewTotalRevenue"
+                      >
+                        0 ₫
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="col-xl-6">
+              <div class="sc-card h-100 mb-0">
+                <h5 class="fw-bold mb-3">Bãi đỗ xe và chỗ đỗ</h5>
+                <table class="table-dark-custom">
+                  <tbody>
+                    <tr>
+                      <th>Số lượng bãi đỗ</th>
+                      <td class="text-end fw-bold" id="overviewTotalLocations">
+                        0
+                      </td>
+                    </tr>
+                    <tr>
+                      <th>Tổng số lượng vị trí</th>
+                      <td class="text-end fw-bold" id="overviewTotalSlots">
+                        0
+                      </td>
+                    </tr>
+                    <tr>
+                      <th>Số vị trí còn trống</th>
+                      <td
+                        class="text-end fw-bold emerald-text"
+                        id="overviewAvailableSlots"
+                      >
+                        0
+                      </td>
+                    </tr>
+                    <tr>
+                      <th>Chỗ đỗ có trụ sạc</th>
+                      <td class="text-end fw-bold" id="overviewChargingSlots">
+                        0
+                      </td>
+                    </tr>
+                    <tr>
+                      <th>Chỗ đỗ không có trụ sạc</th>
+                      <td class="text-end fw-bold" id="overviewStandardSlots">
+                        0
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="col-xl-6">
+              <div class="sc-card h-100 mb-0">
+                <h5 class="fw-bold mb-3">Trạm sạc và cổng sạc</h5>
+                <table class="table-dark-custom">
+                  <tbody>
+                    <tr>
+                      <th>Tổng số trụ sạc</th>
+                      <td class="text-end fw-bold" id="overviewTotalStations">
+                        0
+                      </td>
+                    </tr>
+                    <tr>
+                      <th>Trụ sạc trực tuyến</th>
+                      <td
+                        class="text-end fw-bold emerald-text"
+                        id="overviewOnlineStations"
+                      >
+                        0
+                      </td>
+                    </tr>
+                    <tr>
+                      <th>Trụ sạc ngoại tuyến</th>
+                      <td class="text-end fw-bold" id="overviewOfflineStations">
+                        0
+                      </td>
+                    </tr>
+                    <tr>
+                      <th>Trụ sạc bị lỗi</th>
+                      <td class="text-end fw-bold" id="overviewFaultedStations">
+                        0
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 2. QUẢN LÝ NGƯỜI DÙNG -->
+        <section id="page-users" class="page-section d-none">
+          <h2 class="fw-bold mb-1">
+            Quản lý <span class="emerald-text">Người dùng</span>
+          </h2>
+          <p class="mb-4" style="color: var(--text-muted)">
+            Thêm mới hoặc xóa tài khoản khách hàng trong hệ thống
+          </p>
+
+          <div class="sc-card">
+            <h5 class="fw-bold mb-3">Thêm người dùng mới</h5>
+            <form
+              class="row g-3"
+              onsubmit="handleCreateUser(event)"
+              autocomplete="off"
+            >
+              <div class="col-md-3">
+                <label class="form-label">Họ và tên</label>
+                <input
+                  type="text"
+                  id="u_name"
+                  class="form-control"
+                  placeholder="Nhập họ tên"
+                  required
+                />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Email (@gmail.com)</label>
+                <input
+                  type="email"
+                  id="u_email"
+                  class="form-control"
+                  placeholder="Nhập email"
+                  required
+                />
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">Số điện thoại</label>
+                <input
+                  type="text"
+                  id="u_phone"
+                  class="form-control"
+                  placeholder="Nhập số điện thoại"
+                  required
+                />
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">Mật khẩu</label>
+                <input
+                  type="password"
+                  id="u_password"
+                  class="form-control"
+                  placeholder="Tạo mật khẩu"
+                  autocomplete="new-password"
+                  required
+                />
+              </div>
+              <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-emerald w-100">
+                  Thêm mới
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <div class="sc-card">
+            <h5 class="fw-bold mb-3">Danh sách người dùng</h5>
+            <div class="table-responsive">
+              <table class="table-dark-custom">
+                <thead>
+                  <tr>
+                    <th>Mã người dùng</th>
+                    <th>Họ và tên</th>
+                    <th>Email</th>
+                    <th>Số điện thoại</th>
+                    <th>Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody id="usersTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- 3. QUẢN LÝ PHƯƠNG TIỆN -->
+        <section id="page-vehicles" class="page-section d-none">
+          <h2 class="fw-bold mb-1">
+            Quản lý <span class="emerald-text">Phương tiện</span>
+          </h2>
+          <p class="mb-4" style="color: var(--text-muted)">
+            Đăng ký và quản lý hồ sơ xe điện và xe xăng
+          </p>
+
+          <div class="sc-card">
+            <h5 class="fw-bold mb-3">Đăng ký phương tiện mới</h5>
+            <form
+              class="row g-3"
+              onsubmit="handleCreateVehicle(event)"
+              autocomplete="off"
+            >
+              <div class="col-md-3">
+                <label class="form-label">Mã phương tiện</label>
+                <input
+                  type="text"
+                  id="v_id"
+                  class="form-control"
+                  placeholder="Nhập mã phương tiện"
+                  required
+                />
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Biển số xe</label>
+                <input
+                  type="text"
+                  id="v_plate"
+                  class="form-control"
+                  placeholder="Nhập biển số xe"
+                  required
+                />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Loại phương tiện</label>
+                <select id="v_type" class="form-select" required>
+                  <option value="" selected disabled>
+                    -- Chọn loại phương tiện --
+                  </option>
+                  <option value="EV">Xe điện</option>
+                  <option value="ICE">Xe xăng</option>
+                </select>
+              </div>
+              <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-emerald w-100">
+                  Đăng ký xe
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <div class="sc-card">
+            <h5 class="fw-bold mb-3">Danh sách phương tiện đã đăng ký</h5>
+            <div class="table-responsive">
+              <table class="table-dark-custom">
+                <thead>
+                  <tr>
+                    <th>Mã phương tiện</th>
+                    <th>Chủ sở hữu</th>
+                    <th>Biển số xe</th>
+                    <th>Loại phương tiện</th>
+                    <th class="text-end">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody id="vehiclesTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- 4. TRẠM SẠC & CỔNG SẠC -->
+        <section id="page-stations" class="page-section d-none">
+          <h2 class="fw-bold mb-1">
+            Trạm sạc &amp; <span class="emerald-text">Cổng sạc</span>
+          </h2>
+          <p class="mb-4" style="color: var(--text-muted)">
+            Thêm và quản lý trụ sạc gắn với chỗ đỗ có hỗ trợ sạc.
+          </p>
+
+          <div class="sc-card">
+            <h5 class="fw-bold mb-3" id="stationFormTitle">
+              Thêm trạm sạc và cấu hình cổng
+            </h5>
+            <form
+              id="stationForm"
+              class="row g-3"
+              onsubmit="handleSaveStation(event)"
+              autocomplete="off"
+            >
+              <input type="hidden" id="station_edit_id" />
+              <div class="col-lg-3 col-md-6">
+                <label class="form-label" for="station_location"
+                  >Khu vực trạm sạc</label
+                >
+                <select
+                  id="station_location"
+                  class="form-select"
+                  required
+                  onchange="loadStationSlotOptions()"
+                ></select>
+              </div>
+              <div class="col-lg-auto col-md-6 station-slot-field">
+                <label class="form-label" for="station_slot"
+                  >Vị trí có trụ sạc</label
+                >
+                <select id="station_slot" class="form-select" required disabled>
+                  <option value="">-- Chọn chỗ đỗ có sạc --</option>
+                </select>
+              </div>
+              <div class="col-lg-3 col-md-6">
+                <label class="form-label" for="station_charger_type"
+                  >Loại bộ sạc</label
+                >
+                <input
+                  id="station_charger_type"
+                  class="form-control"
+                  placeholder="Ví dụ: Sạc nhanh DC"
+                  required
+                />
+              </div>
+              <div class="col-lg-auto col-md-6 station-power-field">
+                <label class="form-label" for="station_kw_rate"
+                  >Công suất (kW)</label
+                >
+                <input
+                  type="text"
+                  inputmode="numeric"
+                  pattern="[0-9]*"
+                  id="station_kw_rate"
+                  class="form-control"
+                  required
+                />
+              </div>
+              <div class="col-lg-2 col-md-6">
+                <label class="form-label" for="station_status"
+                  >Trạng thái</label
+                >
+                <select id="station_status" class="form-select">
+                  <option value="Online">Trực tuyến</option>
+                  <option value="Offline">Ngoại tuyến</option>
+                  <option value="Faulted">Bị lỗi</option>
+                </select>
+              </div>
+              <div
+                class="col-lg-12 d-flex align-items-end gap-2 station-actions"
+              >
+                <button
+                  type="submit"
+                  class="btn btn-emerald station-save-button"
+                  id="stationSaveBtn"
+                >
+                  Thêm trạm
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-secondary-dark d-none"
+                  id="stationCancelBtn"
+                  onclick="resetStationForm()"
+                >
+                  Hủy
+                </button>
+              </div>
+            </form>
+            <small class="d-block mt-3" style="color: var(--text-muted)"
+              >Trước tiên hãy tạo chỗ đỗ loại “Có trụ sạc” ở mục Bãi đỗ xe &amp;
+              chỗ đỗ.</small
+            >
+          </div>
+
+          <div class="sc-card">
+            <h5 class="fw-bold mb-3">Danh sách trạm sạc</h5>
+            <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                <label class="form-label" for="stationFilterId"
+                  >Lọc theo trạm</label
+                ><select
+                  id="stationFilterId"
+                  class="form-select"
+                  onchange="renderStationList()"
+                >
+                  <option value="">Tất cả chỗ đỗ có trạm</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label" for="stationFilterStatus"
+                  >Lọc theo trạng thái</label
+                ><select
+                  id="stationFilterStatus"
+                  class="form-select"
+                  onchange="renderStationList()"
+                >
+                  <option value="">Tất cả trạng thái</option>
+                  <option value="Online">Trực tuyến</option>
+                  <option value="Offline">Ngoại tuyến</option>
+                  <option value="Faulted">Bị lỗi</option>
+                </select>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="table-dark-custom">
+                <thead>
+                  <tr>
+                    <th>Mã trụ sạc</th>
+                    <th>Mã chỗ đỗ</th>
+                    <th>Khu vực bãi đỗ</th>
+                    <th>Vị trí</th>
+                    <th>Loại bộ sạc</th>
+                    <th>Trạng thái</th>
+                    <th>Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody id="stationsTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- 5. BÃI ĐỖ XE & CHỖ ĐỖ -->
+        <section id="page-slots" class="page-section d-none">
+          <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+              <h2 class="fw-bold mb-1">
+                Bãi đỗ xe &amp; <span class="emerald-text">Chỗ đỗ</span>
+              </h2>
+              <p class="mb-0" style="color: var(--text-muted)">
+                Quản lý bãi đỗ, vị trí chỗ đỗ và trạng thái vận hành.
+              </p>
+            </div>
+          </div>
+
+          <div class="sc-card">
+            <h5 class="fw-bold mb-3" id="locationFormTitle">Thêm bãi đỗ</h5>
+            <form
+              id="locationForm"
+              class="row g-3 align-items-end"
+              onsubmit="handleSaveLocation(event)"
+              autocomplete="off"
+            >
+              <input type="hidden" id="location_edit_id" />
+              <div class="col-md-4">
+                <label class="form-label" for="location_name">Tên bãi</label
+                ><input id="location_name" class="form-control" required />
+              </div>
+              <div class="col-md-4">
+                <label class="form-label" for="location_address">Địa chỉ</label
+                ><input id="location_address" class="form-control" required />
+              </div>
+              <div class="col-md-2">
+                <label class="form-label" for="location_status"
+                  >Trạng thái</label
+                ><select id="location_status" class="form-select">
+                  <option value="Active">Đang hoạt động</option>
+                  <option value="Maintenance">Bảo trì</option>
+                  <option value="Closed">Ngừng hoạt động</option>
+                </select>
+              </div>
+              <div class="col-md-2 d-flex gap-2">
+                <button
+                  type="submit"
+                  id="locationSaveBtn"
+                  class="btn btn-emerald flex-grow-1"
+                >
+                  Thêm bãi</button
+                ><button
+                  type="button"
+                  id="locationCancelBtn"
+                  class="btn btn-secondary-dark d-none"
+                  onclick="resetLocationForm()"
+                >
+                  Hủy
+                </button>
+              </div>
+            </form>
+            <div class="table-responsive mt-4">
+              <table class="table-dark-custom">
+                <thead>
+                  <tr>
+                    <th>Mã bãi</th>
+                    <th>Tên bãi</th>
+                    <th>Địa chỉ</th>
+                    <th>Trạng thái</th>
+                    <th>Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody id="locationsTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="sc-card">
+            <h5 class="fw-bold mb-3" id="slotFormTitle">Thêm chỗ đỗ</h5>
+            <form
+              id="slotForm"
+              class="row g-3 align-items-end"
+              onsubmit="handleSaveSlot(event)"
+              autocomplete="off"
+            >
+              <input type="hidden" id="slot_edit_id" />
+              <div class="col-md-4">
+                <label class="form-label" for="slot_location">Bãi đỗ</label
+                ><select
+                  id="slot_location"
+                  class="form-select"
+                  required
+                ></select>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label" for="slot_type">Loại chỗ đỗ</label
+                ><select id="slot_type" class="form-select" required>
+                  <option value="">-- Chọn loại chỗ đỗ --</option>
+                  <option value="Charging">Chỗ có trụ sạc</option>
+                  <option value="Standard">Chỗ không có trụ sạc</option>
+                </select>
+              </div>
+              <div class="col-md-2">
+                <label class="form-label" for="slot_position"
+                  >Vị trí (ô số)</label
+                ><input
+                  type="number"
+                  id="slot_position"
+                  min="1"
+                  step="1"
+                  class="form-control"
+                  placeholder="Ví dụ: 1"
+                  required
+                />
+              </div>
+              <div class="col-md-3 d-flex gap-2">
+                <button
+                  type="submit"
+                  id="slotSaveBtn"
+                  class="btn btn-emerald flex-grow-1"
+                >
+                  Thêm chỗ</button
+                ><button
+                  type="button"
+                  id="slotCancelBtn"
+                  class="btn btn-secondary-dark d-none"
+                  onclick="resetSlotForm()"
+                >
+                  Hủy
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <div class="sc-card">
+            <div class="row g-3 align-items-end">
+              <div class="col-md-4">
+                <label class="form-label">Khu vực bãi đỗ</label>
+                <select
+                  id="filterSlotLocation"
+                  class="form-select"
+                  onchange="loadSlots()"
+                >
+                  <option value="">Tất cả khu vực</option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Loại chỗ đỗ</label>
+                <select
+                  id="filterSlotType"
+                  class="form-select"
+                  onchange="loadSlots()"
+                >
+                  <option value="">Tất cả loại chỗ đỗ</option>
+                  <option value="Charging">Chỗ đỗ có trụ sạc</option>
+                  <option value="Standard">Chỗ không có trụ sạc</option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <div class="form-check mb-2">
+                  <input
+                    class="form-check-input"
+                    type="checkbox"
+                    id="filterOnlyAvailable"
+                    onchange="loadSlots()"
+                  />
+                  <label
+                    class="form-check-label text-white fw-semibold"
+                    for="filterOnlyAvailable"
+                  >
+                    Chỉ hiển thị chỗ đỗ còn trống
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="sc-card">
+            <div class="table-responsive">
+              <table class="table-dark-custom">
+                <thead>
+                  <tr>
+                    <th>Mã chỗ đỗ</th>
+                    <th>Khu vực bãi đỗ</th>
+                    <th>Vị trí</th>
+                    <th>Loại chỗ đỗ</th>
+                    <th>Thiết bị sạc</th>
+                    <th>Trạng thái</th>
+                    <th>Quản lý</th>
+                  </tr>
+                </thead>
+                <tbody id="slotsTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section id="page-rates" class="page-section d-none">
+          <h2 class="fw-bold mb-1">
+            Quản lý <span class="emerald-text">Biểu giá</span>
+          </h2>
+          <p class="mb-4" style="color: var(--text-muted)">
+            Tự cấu hình giờ áp dụng và đơn giá. Khi sửa giá đã được dùng, hệ
+            thống tạo phiên bản mới để giữ lịch sử giao dịch.
+          </p>
+          <div class="sc-card">
+            <h5 class="fw-bold mb-3" id="rateFormTitle">Thêm mức giá</h5>
+            <form
+              id="rateForm"
+              class="row g-3 align-items-end"
+              onsubmit="handleSaveRate(event)"
+              autocomplete="off"
+            >
+              <input type="hidden" id="rate_edit_id" />
+              <div class="col-lg-3 col-md-6">
+                <label class="form-label" for="rate_location">Bãi đỗ xe</label
+                ><select
+                  id="rate_location"
+                  class="form-select"
+                  required
+                ></select>
+              </div>
+              <div class="col-lg-2 col-md-6">
+                <label class="form-label" for="rate_kind">Dịch vụ</label
+                ><select
+                  id="rate_kind"
+                  class="form-select"
+                  onchange="updateRateUnit()"
+                  required
+                >
+                  <option value="">-- Chọn dịch vụ --</option>
+                  <option value="both">Đỗ xe và sạc điện</option>
+                  <option value="parking">Đỗ xe</option>
+                  <option value="violation">Phí vi phạm</option>
+                </select>
+              </div>
+              <div class="col-lg-2 col-md-4 rate-schedule-field">
+                <label class="form-label" for="rate_type">Khung giá</label
+                ><select id="rate_type" class="form-select">
+                  <option value="Off-Peak">Thấp điểm</option>
+                  <option value="Normal">Bình thường</option>
+                  <option value="Peak">Cao điểm</option>
+                </select>
+              </div>
+              <div class="col-lg-2 col-md-4 rate-schedule-field">
+                <label class="form-label" for="rate_from">Bắt đầu</label
+                ><input type="time" id="rate_from" class="form-control" />
+              </div>
+              <div class="col-lg-2 col-md-4 rate-schedule-field">
+                <label class="form-label" for="rate_to">Kết thúc</label
+                ><input type="time" id="rate_to" class="form-control" />
+              </div>
+              <div class="col-lg-2 col-md-4 d-none" id="rateParkingWrap">
+                <label class="form-label" for="rate_parking_value"
+                  >Giá đỗ xe (VNĐ/giờ)</label
+                ><input
+                  type="text"
+                  inputmode="decimal"
+                  id="rate_parking_value"
+                  class="form-control"
+                />
+              </div>
+              <div class="col-lg-2 col-md-4 d-none" id="rateChargingWrap">
+                <label class="form-label" for="rate_charging_value"
+                  >Giá sạc (VNĐ/kWh)</label
+                ><input
+                  type="text"
+                  inputmode="decimal"
+                  id="rate_charging_value"
+                  class="form-control"
+                />
+              </div>
+              <div class="col-lg-2 col-md-4 d-none" id="rateViolationWrap">
+                <label class="form-label" for="rate_violation_value"
+                  >Phí vi phạm (VNĐ)</label
+                ><input
+                  type="text"
+                  inputmode="decimal"
+                  id="rate_violation_value"
+                  class="form-control"
+                />
+              </div>
+              <div class="col-lg-2 col-md-4 d-flex gap-2">
+                <button
+                  type="submit"
+                  id="rateSaveBtn"
+                  class="btn btn-emerald flex-grow-1"
+                >
+                  Thêm giá</button
+                ><button
+                  type="button"
+                  id="rateCancelBtn"
+                  class="btn btn-secondary-dark d-none"
+                  onclick="resetRateForm()"
+                >
+                  Hủy
+                </button>
+              </div>
+            </form>
+          </div>
+          <div class="sc-card">
+            <h5 class="fw-bold mb-3">Danh sách các mức giá</h5>
+            <div class="row g-3 mb-3">
+              <div class="col-md-5">
+                <label class="form-label" for="rateListLocation"
+                  >Lọc theo bãi đỗ xe</label
+                ><select
+                  id="rateListLocation"
+                  class="form-select"
+                  onchange="loadRates()"
+                >
+                  <option value="">Tất cả các bãi đỗ</option>
+                </select>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="table-dark-custom">
+                <thead>
+                  <tr>
+                    <th>Bãi đỗ</th>
+                    <th>Dịch vụ</th>
+                    <th>Khung giá</th>
+                    <th>Thời gian áp dụng</th>
+                    <th>Đơn giá</th>
+                    <th>Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody id="ratesTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- 6. ĐẶT CHỖ -->
+        <section id="page-reservations" class="page-section d-none">
+          <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+              <h2 class="fw-bold mb-1">
+                Đặt chỗ <span class="emerald-text">Đỗ xe &amp; Sạc điện</span>
+              </h2>
+              <p class="mb-0" style="color: var(--text-muted)">
+                Tìm kiếm chỗ đỗ còn trống và đặt trước theo khoảng thời gian
+              </p>
+            </div>
+            <span class="pill-emerald">Đặt chỗ theo lịch trống</span>
+          </div>
+
+          <div class="sc-card">
+            <h5 class="fw-bold mb-1">Bước 1 · Chọn xe và thời gian</h5>
+            <p class="mb-3" style="color: var(--text-muted)">
+                Có thể đặt qua nhiều khung giá; hệ thống tính từng khung và chỉ ẩn chỗ nếu thiếu giá ở một phần thời gian.
+            </p>
+            <form
+              class="row g-3 align-items-end"
+              onsubmit="searchReservationSlots(event)"
+              autocomplete="off"
+            >
+              <div class="col-lg-4 col-md-6">
+                <label for="r_vehicle" class="form-label">Phương tiện</label>
+                <select id="r_vehicle" class="form-select" required></select>
+              </div>
+              <div class="col-lg-4 col-md-6">
+                <label for="quickLocFilter" class="form-label">Khu vực</label>
+                <select id="quickLocFilter" class="form-select">
+                  <option value="">Tất cả khu vực</option>
+                </select>
+              </div>
+              <div class="col-lg-4 col-md-6">
+                <label for="quickTypeFilter" class="form-label"
+                  >Loại chỗ đỗ</label
+                >
+                <select id="quickTypeFilter" class="form-select">
+                  <option value="">Chỗ đỗ xe bất kỳ</option>
+                  <option value="Charging">Có trụ sạc</option>
+                  <option value="Standard">Không có trụ sạc</option>
+                </select>
+              </div>
+              <div class="col-md-5">
+                <label for="r_start" class="form-label">Bắt đầu</label>
+                <input
+                  type="datetime-local"
+                  id="r_start"
+                  class="form-control"
+                  required
+                />
+              </div>
+              <div class="col-md-5">
+                <label for="r_end" class="form-label">Kết thúc</label>
+                <input
+                  type="datetime-local"
+                  id="r_end"
+                  class="form-control"
+                  required
+                />
+              </div>
+              <div class="col-md-2">
+                <button type="submit" class="btn btn-emerald w-100">
+                  Tìm chỗ
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <div id="reservationSearchResults" class="sc-card d-none">
+            <div
+              class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2"
+            >
+              <h5 class="fw-bold mb-0">Bước 2 · Chọn chỗ phù hợp</h5>
+              <span id="resSlotSpeedBadge" class="pill-emerald"
+                >Chọn thời gian để tìm</span
+              >
+            </div>
+            <div class="table-responsive">
+              <table class="table-dark-custom">
+                <thead>
+                  <tr>
+                    <th>Khu vực bãi đỗ</th>
+                    <th>Vị trí</th>
+                    <th>Loại chỗ đỗ</th>
+                    <th>Thông số trụ sạc</th>
+                    <th>Trạng thái</th>
+                    <th>Chi phí</th>
+                    <th>Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody id="bookingAvailableSlotsBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div id="reservationConfirmCard" class="sc-card d-none">
+            <h5 class="fw-bold mb-2">Bước 3 · Kiểm tra và xác nhận</h5>
+            <p
+              id="selectedReservationSummary"
+              class="mb-3"
+              style="color: var(--text-muted)"
+            ></p>
+            <input type="hidden" id="r_slot" />
+            <button
+              type="button"
+              class="btn btn-emerald"
+              onclick="handleCreateReservation()"
+            >
+              Xác nhận đặt chỗ
+            </button>
+            <button
+              type="button"
+              class="btn btn-secondary-dark ms-2"
+              onclick="clearSelectedReservation()"
+            >
+              Chọn chỗ khác
+            </button>
+          </div>
+
+          <div class="sc-card">
+            <h5 class="fw-bold mb-3">Danh sách đặt chỗ</h5>
+            <div class="table-responsive">
+              <table class="table-dark-custom">
+                <thead>
+                  <tr>
+                    <th>Mã đặt chỗ</th>
+                    <th>Mã phương tiện</th>
+                    <th>Bãi đỗ</th>
+                    <th>Vị trí</th>
+                    <th>Thời gian bắt đầu</th>
+                    <th>Thời gian kết thúc</th>
+                    <th>Chi phí</th>
+                    <th>Trạng thái</th>
+                    <th>Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody id="reservationsTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- 7. PHIÊN SẠC (SỐ ĐIỆN KWH DO HỆ THỐNG TỰ ĐỘNG TÍNH VÀ CHỈ HIỂN THỊ CHỈ ĐỌC) -->
+        <section id="page-sessions" class="page-section d-none">
+          <h2 class="fw-bold mb-1">
+            Phiên <span class="emerald-text">Sạc điện</span>
+          </h2>
+          <p class="mb-4" style="color: var(--text-muted)">
+            Kết thúc phiên đang sạc và theo dõi các phiên chờ thanh toán.
+          </p>
+
+          <div class="sc-card">
+            <h5 class="fw-bold mb-1">Bắt đầu một phiên sạc</h5>
+            <p class="mb-3" style="color: var(--text-muted)">
+              Chọn xe điện và mã đặt chỗ đang trong thời gian sử dụng chỗ sạc.
+            </p>
+            <form
+              class="row g-3 align-items-end"
+              onsubmit="handleCreateSession(event)"
+              autocomplete="off"
+            >
+              <div class="col-lg-4 col-md-6">
+                <label for="s_vehicle" class="form-label">Chọn xe điện</label>
+                <select
+                  id="s_vehicle"
+                  class="form-select"
+                  required
+                  onchange="filterSessionReservationOptions()"
+                ></select>
+              </div>
+              <div class="col-lg-4 col-md-6">
+                <label for="s_res_id" class="form-label">Mã đặt chỗ</label>
+                <select
+                  id="s_res_id"
+                  class="form-select"
+                  required
+                  onchange="handleSessionReservationChange()"
+                >
+                  <option value="">-- Chọn mã đặt chỗ --</option>
+                </select>
+              </div>
+              <div class="col-lg-4 col-md-6">
+                <button type="submit" class="btn btn-emerald w-100">
+                  Bắt đầu sạc
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <div class="sc-card">
+            <h5 class="fw-bold mb-3">Phiên sạc đang hoạt động</h5>
+            <div class="table-responsive">
+              <table class="table-dark-custom">
+                <thead>
+                  <tr>
+                    <th>Mã phương tiện</th>
+                    <th>Biển số xe</th>
+                    <th>Bắt đầu sạc</th>
+                    <th>Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody id="activeSessionsTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="sc-card">
+            <h5 class="fw-bold mb-3">Danh sách phiên sạc chờ thanh toán</h5>
+            <div class="table-responsive">
+              <table class="table-dark-custom">
+                <thead>
+                  <tr>
+                    <th>Mã phương tiện</th>
+                    <th>Biển số xe</th>
+                    <th>Bắt đầu sạc</th>
+                    <th>Kết thúc sạc</th>
+                    <th>Điện năng tiêu thụ</th>
+                    <th>Đơn giá / kWh</th>
+                    <th>Tổng tiền sạc</th>
+                    <th>Trạng thái</th>
+                  </tr>
+                </thead>
+                <tbody id="sessionsTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- 8. THANH TOÁN & PHÍ -->
+        <section id="page-billing" class="page-section d-none">
+          <h2 class="fw-bold mb-1">
+            Thanh toán &amp; <span class="emerald-text">Biểu phí</span>
+          </h2>
+          <p class="mb-4" style="color: var(--text-muted)">
+            Chỉ các mã đã xác nhận rời chỗ mới xuất hiện tại đây. Phiên sạc sẽ
+            tự kết thúc sau 15 phút kể từ giờ đặt chỗ kết thúc nếu chưa được kết
+            thúc thủ công.
+          </p>
+
+          <div class="row g-4">
+            <div class="col-12">
+              <div class="sc-card h-100 mb-0">
+                <h5 class="fw-bold mb-3">Thanh toán hóa đơn giao dịch</h5>
+                <form
+                  onsubmit="handlePayInvoice(event)"
+                  class="row g-3"
+                  autocomplete="off"
+                >
+                  <div class="col-12">
+                    <label for="pay_res_id" class="form-label"
+                      >Mã đặt chỗ</label
+                    >
+                    <select
+                      id="pay_res_id"
+                      class="form-select"
+                      required
+                      onchange="showPaymentDetails()"
+                    >
+                      <option value="">-- Chọn mã đặt chỗ --</option>
+                    </select>
+                  </div>
+                  <div class="col-12 d-none" id="paymentDetails">
+                    <div class="payment-summary-grid">
+                      <div>
+                        <span>Tên bãi đỗ</span
+                        ><strong id="pay_location">—</strong>
+                      </div>
+                      <div>
+                        <span>Vị trí</span><strong id="pay_position">—</strong>
+                      </div>
+                      <div>
+                        <span>Chi phí đỗ xe</span
+                        ><strong id="pay_parking">—</strong>
+                      </div>
+                      <div class="d-none" id="payChargingWrap">
+                        <span>Chi phí sạc điện</span
+                        ><strong id="pay_charging">—</strong>
+                      </div>
+                      <div class="d-none" id="payViolationWrap">
+                        <span>Phí vi phạm</span
+                        ><strong id="pay_violation">—</strong>
+                      </div>
+                      <div class="payment-total">
+                        <span>Tổng chi phí</span
+                        ><strong id="pay_total">—</strong>
+                      </div>
+                    </div>
+                    <div class="mt-3">
+                      <label for="pay_method" class="form-label"
+                        >Phương thức thanh toán</label
+                      >
+                      <select id="pay_method" class="form-select">
+                        <option value="Ví điện tử">Ví điện tử</option>
+                        <option value="Thẻ tín dụng">Thẻ tín dụng</option>
+                        <option value="Mã QR">Mã QR</option>
+                        <option value="Chuyển khoản ngân hàng">
+                          Chuyển khoản ngân hàng
+                        </option>
+                      </select>
+                    </div>
+                    <button type="submit" class="btn btn-emerald w-100 mt-3">
+                      Thanh toán
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div
+      id="vehicleDeleteModal"
+      class="modal-overlay-custom"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="vehicleDeleteTitle"
+      onclick="
+        if (event.target === this) closeVehicleModal('vehicleDeleteModal');
+      "
+    >
+      <div class="modal-card-custom">
+        <h4 id="vehicleDeleteTitle" class="fw-bold mb-2">
+          Xác nhận xóa phương tiện
+        </h4>
+        <p class="mb-0" style="color: var(--text-muted)">
+          Bạn có chắc muốn xóa phương tiện
+          <strong id="vehicleDeleteName" class="text-white"></strong> không?
+        </p>
+        <div class="modal-actions-custom">
+          <button
+            type="button"
+            class="btn btn-secondary-dark"
+            onclick="closeVehicleModal('vehicleDeleteModal')"
+          >
+            Hủy
+          </button>
+          <button
+            type="button"
+            id="confirmDeleteVehicleBtn"
+            class="btn btn-danger"
+          >
+            Xóa
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div
+      id="locationDeleteModal"
+      class="modal-overlay-custom"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="locationDeleteTitle"
+      onclick="
+        if (event.target === this) closeVehicleModal('locationDeleteModal');
+      "
+    >
+      <div class="modal-card-custom">
+        <h4 id="locationDeleteTitle" class="fw-bold mb-3">
+          Xác nhận xóa bãi đỗ
+        </h4>
+        <p class="mb-1">Mã bãi: <strong id="locationDeleteId"></strong></p>
+        <p class="mb-1">Tên bãi: <strong id="locationDeleteName"></strong></p>
+        <p class="mb-0">Vị trí: <strong id="locationDeleteAddress"></strong></p>
+        <div class="modal-actions-custom">
+          <button
+            type="button"
+            class="btn btn-secondary-dark"
+            onclick="closeVehicleModal('locationDeleteModal')"
+          >
+            Hủy
+          </button>
+          <button
+            type="button"
+            id="confirmDeleteLocationBtn"
+            class="btn btn-danger"
+          >
+            Xác nhận xóa
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div
+      id="vehicleEditModal"
+      class="modal-overlay-custom"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="vehicleEditTitle"
+      onclick="
+        if (event.target === this) closeVehicleModal('vehicleEditModal');
+      "
+    >
+      <div class="modal-card-custom">
+        <h4 id="vehicleEditTitle" class="fw-bold mb-3">
+          Sửa thông tin phương tiện
+        </h4>
+        <form id="vehicleEditForm">
+          <div class="mb-3">
+            <label for="editVehicleId" class="form-label">Mã phương tiện</label>
+            <input id="editVehicleId" class="form-control" required />
+          </div>
+          <div class="mb-3">
+            <label for="editVehiclePlate" class="form-label">Biển số xe</label>
+            <input id="editVehiclePlate" class="form-control" required />
+          </div>
+          <div>
+            <label for="editVehicleType" class="form-label"
+              >Loại phương tiện</label
+            >
+            <select id="editVehicleType" class="form-select" required>
+              <option value="" selected disabled>
+                -- Chọn loại phương tiện --
+              </option>
+              <option value="EV">Xe điện</option>
+              <option value="ICE">Xe xăng</option>
+            </select>
+          </div>
+          <div class="modal-actions-custom">
+            <button
+              type="button"
+              class="btn btn-secondary-dark"
+              onclick="closeVehicleModal('vehicleEditModal')"
+            >
+              Hủy
+            </button>
+            <button type="submit" class="btn btn-emerald">Lưu thay đổi</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script>
+      let currentUser = null;
+      let activePageKey = null;
+      let pendingLocationDeleteId = null;
+
+      function formatVND(val) {
+        return Number(val || 0).toLocaleString("vi-VN") + " VNĐ";
+      }
+
+      function formatDateTimeVI(val) {
+        if (!val) return "";
+        const raw = String(val).trim();
+        // Flask serializes naive PostgreSQL TIMESTAMP values as RFC dates ending in GMT.
+        // These database columns represent local wall time, so do not let the browser
+        // convert that string from UTC and shift it by the user's UTC offset.
+        const flaskTimestamp = raw.match(
+          /^(?:\\w{3},\\s*)?(\\d{1,2})\\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\\s+(\\d{4})\\s+(\\d{2}):(\\d{2})(?::(\\d{2}))?\\s+GMT$/i,
+        );
+        let d;
+        if (flaskTimestamp) {
+          const months = {
+            jan: 0,
+            feb: 1,
+            mar: 2,
+            apr: 3,
+            may: 4,
+            jun: 5,
+            jul: 6,
+            aug: 7,
+            sep: 8,
+            oct: 9,
+            nov: 10,
+            dec: 11,
+          };
+          d = new Date(
+            Number(flaskTimestamp[3]),
+            months[flaskTimestamp[2].toLowerCase()],
+            Number(flaskTimestamp[1]),
+            Number(flaskTimestamp[4]),
+            Number(flaskTimestamp[5]),
+            Number(flaskTimestamp[6] || 0),
+          );
+        } else {
+          d = new Date(val);
+        }
+        if (isNaN(d.getTime())) return String(val).replace("GMT", "").trim();
+        return d.toLocaleString("vi-VN", {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false,
+        });
+      }
+
+      function translateStatus(st) {
+        const map = {
+          Available: '<span class="pill-emerald">Còn trống</span>',
+          Occupied: '<span class="pill-red">Đang có xe</span>',
+          Reserved: '<span class="pill-amber">Đã đặt trước</span>',
+          Maintenance: '<span class="pill-slate">Đang bảo trì</span>',
+          Active: '<span class="pill-emerald">Đang hoạt động</span>',
+          Closed: '<span class="pill-slate">Ngừng hoạt động</span>',
+          Online: '<span class="pill-emerald">Trực tuyến</span>',
+          Busy: '<span class="pill-amber">Đang sạc</span>',
+          Offline: '<span class="pill-slate">Ngoại tuyến</span>',
+          Faulted: '<span class="pill-red">Báo lỗi</span>',
+          Pending: '<span class="pill-amber">Chờ thanh toán</span>',
+          Paid: '<span class="pill-emerald">Đã thanh toán</span>',
+          Completed: '<span class="pill-emerald">Đã thanh toán</span>',
+          Failed: '<span class="pill-red">Thất bại</span>',
+          Refunded: '<span class="pill-slate">Đã hoàn tiền</span>',
+        };
+        return map[st] || `<span class="pill-slate">${st}</span>`;
+      }
+
+      function translateRole(role) {
+        return role === "system_admin" ? "Quản trị hệ thống" : "Khách hàng";
+      }
+
+      function checkGmailClient(emailStr) {
+        const e = (emailStr || "").trim().toLowerCase();
+        return e.length > 10 && e.endsWith("@gmail.com") && !e.includes(" ");
+      }
+
+      function showNotice(msg, isError = false) {
+        const el = document.getElementById("globalNotice");
+        el.className =
+          "notice-box " + (isError ? "notice-error" : "notice-success");
+        el.textContent = msg;
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      function showAuthError(msg, isError = true) {
+        const al = document.getElementById("authAlert");
+        al.className =
+          "notice-box " + (isError ? "notice-error" : "notice-success");
+        al.textContent = msg;
+      }
+
+      function toggleAuthMode(mode) {
+        document.getElementById("authAlert").classList.add("d-none");
+        if (mode === "register") {
+          document.getElementById("loginForm").classList.add("d-none");
+          document.getElementById("registerForm").classList.remove("d-none");
+        } else {
+          document.getElementById("registerForm").classList.add("d-none");
+          document.getElementById("loginForm").classList.remove("d-none");
+        }
+      }
+
+      async function submitLogin(e) {
+        e.preventDefault();
+        const email = document.getElementById("loginEmail").value.trim();
+        const password = document.getElementById("loginPassword").value;
+        if (!checkGmailClient(email)) {
+          showAuthError("Email phải có đuôi @gmail.com");
+          return;
+        }
+        const resp = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        });
+        const data = await resp.json();
+        if (!resp.ok) {
+          showAuthError(data.message);
+          return;
+        }
+        currentUser = data.user;
+        enterApp();
+      }
+
+      async function submitRegister(e) {
+        e.preventDefault();
+        const email = document.getElementById("regEmail").value.trim();
+        if (!checkGmailClient(email)) {
+          showAuthError("Email phải có đuôi @gmail.com");
+          return;
+        }
+        const payload = {
+          name: document.getElementById("regName").value.trim(),
+          email: email,
+          phone_number: document.getElementById("regPhone").value.trim(),
+          password: document.getElementById("regPassword").value,
+        };
+        const resp = await fetch("/api/auth/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const data = await resp.json();
+        if (!resp.ok) {
+          showAuthError(data.message, true);
+        } else {
+          toggleAuthMode("login");
+          showAuthError(data.message, false);
+        }
+      }
+
+      async function handleLogout() {
+        await fetch("/api/auth/logout", { method: "POST" });
+        currentUser = null;
+        activePageKey = null;
+        document.getElementById("loginEmail").value = "";
+        document.getElementById("loginPassword").value = "";
+        document.getElementById("appScreen").classList.add("d-none");
+        document.getElementById("authScreen").classList.remove("d-none");
+      }
+
+      function applyRBACMenu() {
+        const isAdmin = currentUser.role === "system_admin";
+        document.getElementById("userRoleBadge").textContent = translateRole(
+          currentUser.role,
+        );
+        document.getElementById("userNameLabel").textContent = currentUser.name;
+
+        document.getElementById("menu-overview").style.display = isAdmin
+          ? "flex"
+          : "none";
+        document.getElementById("menu-users").style.display = isAdmin
+          ? "flex"
+          : "none";
+        document.getElementById("menu-stations").style.display = isAdmin
+          ? "flex"
+          : "none";
+        document.getElementById("menu-slots").style.display = isAdmin
+          ? "flex"
+          : "none";
+        document.getElementById("menu-rates").style.display = isAdmin
+          ? "flex"
+          : "none";
+
+        document.getElementById("menu-vehicles").style.display = isAdmin
+          ? "none"
+          : "flex";
+        document.getElementById("menu-reservations").style.display = isAdmin
+          ? "none"
+          : "flex";
+        document.getElementById("menu-sessions").style.display = isAdmin
+          ? "none"
+          : "flex";
+        document.getElementById("menu-billing").style.display = isAdmin
+          ? "none"
+          : "flex";
+      }
+
+      function enterApp() {
+        document.getElementById("authScreen").classList.add("d-none");
+        document.getElementById("appScreen").classList.remove("d-none");
+        applyRBACMenu();
+        if (currentUser.role === "system_admin") {
+          openPage("overview");
+        } else {
+          openPage("vehicles");
+        }
+      }
+
+      function openPage(pageKey) {
+        if (
+          currentUser?.role === "system_admin" &&
+          ["vehicles", "reservations", "sessions", "billing"].includes(pageKey)
+        )
+          return;
+        if (
+          currentUser?.role !== "system_admin" &&
+          ["overview", "users", "stations", "slots", "rates"].includes(pageKey)
+        )
+          return;
+        if (activePageKey !== pageKey) resetPageState(pageKey);
+        activePageKey = pageKey;
+        document.getElementById("globalNotice").classList.add("d-none");
+        document
+          .querySelectorAll(".page-section")
+          .forEach((s) => s.classList.add("d-none"));
+        document
+          .querySelectorAll(".nav-item-btn")
+          .forEach((b) => b.classList.remove("active"));
+
+        document.getElementById("page-" + pageKey).classList.remove("d-none");
+        const btn = document.getElementById("menu-" + pageKey);
+        if (btn) btn.classList.add("active");
+
+        if (pageKey === "overview") loadOverview();
+        if (pageKey === "users") loadUsers();
+        if (pageKey === "vehicles") loadVehicles();
+        if (pageKey === "stations") {
+          loadLocations().then(() => {
+            loadStations();
+            loadStationSlotOptions();
+          });
+        }
+        if (pageKey === "slots") {
+          loadLocations().then(loadSlots);
+        }
+        if (pageKey === "rates") loadLocations().then(loadRates);
+        if (pageKey === "reservations") {
+          loadVehiclesDropdown();
+          loadLocations();
+          loadReservations();
+        }
+        if (pageKey === "sessions") {
+          loadVehiclesDropdown();
+          loadSessions();
+        }
+        if (pageKey === "billing") loadBilling();
+      }
+
+      function resetPageState(pageKey) {
+        const section = document.getElementById(`page-${pageKey}`);
+        if (!section) return;
+        if (pageKey === "stations") resetStationForm();
+        else if (pageKey === "slots") {
+          resetLocationForm();
+          resetSlotForm();
+        } else if (pageKey === "rates") resetRateForm();
+        else if (pageKey === "locations") resetLocationForm();
+        else section.querySelectorAll("form").forEach((form) => form.reset());
+
+        section.querySelectorAll("select").forEach((select) => {
+          select.selectedIndex = 0;
+          select.disabled = false;
+        });
+        if (pageKey === "reservations") {
+          clearSelectedReservation();
+          document
+            .getElementById("reservationSearchResults")
+            .classList.add("d-none");
+          document.getElementById("bookingAvailableSlotsBody").innerHTML = "";
+        }
+        if (pageKey === "billing")
+          document.getElementById("paymentDetails").classList.add("d-none");
+      }
+
+      async function loadVehiclesDropdown() {
+        const resp = await fetch("/api/vehicles");
+        const data = await resp.json();
+        if (!resp.ok || !data.data) return;
+        const reservationOpts = data.data
+          .map(
+            (v) =>
+              `<option value="${escapeHtml(v.vehicle_id)}" data-vehicle-type="${escapeHtml(v.vehicle_type)}">${escapeHtml(v.vehicle_id)} - ${escapeHtml(v.plate_number)} (${v.vehicle_type === "EV" ? "Xe điện" : "Xe xăng"})</option>`,
+          )
+          .join("");
+        const electricOpts = data.data
+          .filter((v) => v.vehicle_type === "EV")
+          .map(
+            (v) =>
+              `<option value="${escapeHtml(v.vehicle_id)}">${escapeHtml(v.vehicle_id)} - ${escapeHtml(v.plate_number)}</option>`,
+          )
+          .join("");
+        document.getElementById("r_vehicle").innerHTML =
+          '<option value="">-- Chọn phương tiện --</option>' + reservationOpts;
+        document.getElementById("s_vehicle").innerHTML =
+          '<option value="">-- Chọn xe điện --</option>' + electricOpts;
+        await loadReservationOptions();
+      }
+
+      async function loadReservationOptions() {
+        const select = document.getElementById("s_res_id");
+        if (!select) return;
+        const resp = await fetch("/api/reservations");
+        const data = await resp.json();
+        if (!resp.ok || !data.data) return;
+        const eligible = data.data.filter(
+          (r) =>
+            r.slot_type === "Charging" &&
+            r.payment_status === "Pending" &&
+            !r.vehicle_departed_at &&
+            !r.has_charging_session,
+        );
+        select.innerHTML =
+          '<option value="">-- Chọn mã đặt chỗ --</option>' +
+          eligible
+            .map(
+              (r) =>
+                `<option value="${escapeHtml(r.reservation_id)}" data-vehicle-id="${escapeHtml(r.vehicle_id)}" data-start-time="${escapeHtml(r.start_time)}" data-plate="${escapeHtml(r.plate_number)}">${escapeHtml(r.reservation_id)} · ${escapeHtml(r.plate_number)} · ${formatDateTimeVI(r.start_time)}</option>`,
+            )
+            .join("");
+        filterSessionReservationOptions();
+      }
+
+      function filterSessionReservationOptions() {
+        const vehicleId = document.getElementById("s_vehicle").value;
+        const select = document.getElementById("s_res_id");
+        const selectedValue = select.value;
+        [...select.options].forEach((option, index) => {
+          option.hidden =
+            index > 0 && (!vehicleId || option.dataset.vehicleId !== vehicleId);
+        });
+        if (selectedValue && select.selectedOptions[0]?.hidden)
+          select.value = "";
+      }
+
+      function handleSessionReservationChange() {
+        const option = document.getElementById("s_res_id").selectedOptions[0];
+        if (!option?.value) return;
+        if (new Date(option.dataset.startTime) > new Date()) {
+          showNotice(
+            "Chưa đến giờ bắt đầu trên mã đặt chỗ. Bạn có thể bắt đầu sạc khi đã đến giờ vào chỗ.",
+            true,
+          );
+          return;
+        }
+        showNotice(`Đã chọn mã đặt chỗ ${option.value}.`);
+      }
+
+      let selectedReservationSlot = null;
+
+      async function searchReservationSlots(event) {
+        event.preventDefault();
+        clearSelectedReservation();
+        const params = new URLSearchParams({
+          location_id: document.getElementById("quickLocFilter").value,
+          slot_type: document.getElementById("quickTypeFilter").value,
+          vehicle_type:
+            document.getElementById("r_vehicle").selectedOptions[0]?.dataset
+              .vehicleType || "",
+          only_available: "true",
+          start_time: document.getElementById("r_start").value,
+          end_time: document.getElementById("r_end").value,
+        });
+        const resp = await fetch(`/api/slots?${params.toString()}`);
+        const data = await resp.json();
+        if (!resp.ok) return showNotice(data.message, true);
+        document
+          .getElementById("reservationSearchResults")
+          .classList.remove("d-none");
+        document.getElementById("resSlotSpeedBadge").textContent =
+          `Tìm thấy ${data.data.length} chỗ phù hợp`;
+        document.getElementById("bookingAvailableSlotsBody").innerHTML =
+          data.data
+            .map(
+              (s) => `
+        <tr>
+            <td>${escapeHtml(s.location_name)}</td>
+            <td>Ô ${s.position}</td>
+            <td>${s.slot_type === "Charging" ? '<span class="pill-emerald">Có trụ sạc</span>' : '<span class="pill-slate">Không có trụ sạc</span>'}</td>
+            <td>${s.slot_type === "Standard" ? "Không có trụ sạc" : s.charger_type ? `${escapeHtml(s.charger_type)} (${s.kw_rate} kW)` : "Chưa gắn trụ sạc"}</td>
+            <td><span class="pill-emerald">Còn trống</span></td>
+            <td class="fw-bold emerald-text">${formatVND(s.estimated_parking_fee || s.estimated_total || 0)}</td>
+            <td><button type="button" class="btn btn-secondary-dark btn-sm" data-book-slot="${escapeHtml(s.slot_id)}">Chọn chỗ này</button></td>
+        </tr>
+    `,
+            )
+            .join("") ||
+          '<tr><td colspan="7" class="text-center" style="color:var(--text-muted);">Không có chỗ đỗ trống phù hợp.</td></tr>';
+        data.data.forEach((s) => {
+          const button = [
+            ...document.querySelectorAll("[data-book-slot]"),
+          ].find((item) => item.dataset.bookSlot === s.slot_id);
+          if (button)
+            button.addEventListener("click", () => selectSlotForBooking(s));
+        });
+      }
+
+      function selectSlotForBooking(slot) {
+        selectedReservationSlot = slot;
+        document.getElementById("r_slot").value = slot.slot_id;
+        document.getElementById("selectedReservationSummary").textContent =
+          `${slot.location_name}, ô ${slot.position} · ${slot.slot_type === "Charging" ? "Có trụ sạc" : "Không có trụ sạc"} · ${document.getElementById("r_start").value.replace("T", " ")} đến ${document.getElementById("r_end").value.replace("T", " ")} · Chi phí ${formatVND(slot.estimated_parking_fee || slot.estimated_total || 0)}`;
+        document
+          .getElementById("reservationConfirmCard")
+          .classList.remove("d-none");
+        showNotice(
+          "Đã chọn chỗ. Hãy di chuyển xe khỏi vị trí trong vòng 15 phút kể từ khi hết thời gian đặt chỗ để tránh phí vi phạm.",
+        );
+        document
+          .getElementById("reservationConfirmCard")
+          .scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+
+      function clearSelectedReservation() {
+        selectedReservationSlot = null;
+        const slotInput = document.getElementById("r_slot");
+        if (slotInput) slotInput.value = "";
+        const confirmCard = document.getElementById("reservationConfirmCard");
+        if (confirmCard) confirmCard.classList.add("d-none");
+      }
+
+      async function loadOverview() {
+        const resp = await fetch("/api/overview");
+        const data = await resp.json();
+        if (!resp.ok) return showNotice(data.message, true);
+
+        const overviewFields = {
+          overviewTotalLocations: "total_locations",
+          overviewTotalSlots: "total_slots",
+          overviewAvailableSlots: "available_slots",
+          overviewChargingSlots: "charging_slots",
+          overviewStandardSlots: "standard_slots",
+          overviewTotalStations: "total_stations",
+          overviewOnlineStations: "online_stations",
+          overviewOfflineStations: "offline_stations",
+          overviewFaultedStations: "faulted_stations",
+          overviewParkingRevenue: "parking_revenue",
+          overviewParkingChargingRevenue: "parking_charging_revenue",
+          overviewViolationRevenue: "violation_revenue",
+          overviewTotalRevenue: "total_revenue",
+        };
+        for (const [elementId, key] of Object.entries(overviewFields)) {
+          const value = data.kpis[key] ?? 0;
+          document.getElementById(elementId).textContent = key.endsWith(
+            "_revenue",
+          )
+            ? formatVND(value)
+            : value;
+        }
+      }
+
+      async function loadUsers() {
+        const resp = await fetch("/api/users");
+        const data = await resp.json();
+        if (!resp.ok) return showNotice(data.message, true);
+        document.getElementById("usersTableBody").innerHTML = data.data
+          .map(
+            (u) => `
+        <tr>
+            <td class="fw-bold">${escapeHtml(u.user_id)}</td>
+            <td>${escapeHtml(u.name)}</td>
+            <td>${escapeHtml(u.email)}</td>
+            <td>${escapeHtml(u.phone_number)}</td>
+            <td>
+                ${
+                  u.role === "system_admin"
+                    ? '<span class="pill-emerald">Tài khoản quản trị</span>'
+                    : `<button type="button" data-delete-user="${escapeHtml(u.user_id)}" class="btn btn-secondary-dark btn-sm">Xóa</button>`
+                }
+            </td>
+        </tr>
+    `,
+          )
+          .join("");
+        document.querySelectorAll("[data-delete-user]").forEach((button) => {
+          button.addEventListener("click", () =>
+            handleDeleteUser(button.dataset.deleteUser),
+          );
+        });
+      }
+
+      async function handleCreateUser(e) {
+        e.preventDefault();
+        const email = document.getElementById("u_email").value.trim();
+        if (!checkGmailClient(email)) {
+          showNotice("Email phải có đuôi @gmail.com", true);
+          return;
+        }
+        const resp = await fetch("/api/users", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: document.getElementById("u_name").value.trim(),
+            email: email,
+            phone_number: document.getElementById("u_phone").value.trim(),
+            password: document.getElementById("u_password").value,
+          }),
+        });
+        const data = await resp.json();
+        showNotice(data.message, !resp.ok);
+        if (resp.ok) {
+          e.target.reset();
+          loadUsers();
+        }
+      }
+
+      async function handleDeleteUser(uid) {
+        const resp = await fetch("/api/users/" + uid, { method: "DELETE" });
+        const data = await resp.json();
+        showNotice(data.message, !resp.ok);
+        if (resp.ok) loadUsers();
+      }
+
+      async function loadVehicles() {
+        const resp = await fetch("/api/vehicles");
+        const data = await resp.json();
+        if (!resp.ok) return showNotice(data.message, true);
+        vehiclesById = Object.fromEntries(
+          data.data.map((v) => [v.vehicle_id, v]),
+        );
+        document.getElementById("vehiclesTableBody").innerHTML = data.data
+          .map(
+            (v) => `
+        <tr>
+            <td class="fw-bold">${escapeHtml(v.vehicle_id)}</td>
+            <td>${escapeHtml(v.owner_name)}</td>
+            <td class="fw-bold">${escapeHtml(v.plate_number)}</td>
+            <td>${
+              v.vehicle_type === "EV"
+                ? '<span class="pill-emerald">Xe điện</span>'
+                : '<span class="pill-amber">Xe xăng</span>'
+            }</td>
+            <td>
+                <div class="vehicle-actions">
+                    <button type="button" class="btn btn-secondary-dark btn-sm" data-vehicle-action="edit" data-vehicle-id="${escapeHtml(v.vehicle_id)}">Sửa</button>
+                    <button type="button" class="btn btn-danger btn-sm" data-vehicle-action="delete" data-vehicle-id="${escapeHtml(v.vehicle_id)}">Xóa</button>
+                </div>
+            </td>
+        </tr>
+    `,
+          )
+          .join("");
+        document.querySelectorAll("[data-vehicle-action]").forEach((button) => {
+          button.addEventListener("click", () => {
+            const vehicle = vehiclesById[button.dataset.vehicleId];
+            if (!vehicle) return;
+            if (button.dataset.vehicleAction === "edit")
+              openVehicleEdit(vehicle);
+            else openVehicleDelete(vehicle);
+          });
+        });
+      }
+
+      let vehiclesById = {};
+      let vehicleIdBeingDeleted = null;
+      let vehicleIdBeingEdited = null;
+
+      function escapeHtml(value) {
+        return String(value ?? "").replace(
+          /[&<>"']/g,
+          (char) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#39;",
+            })[char],
+        );
+      }
+
+      function openVehicleDelete(vehicle) {
+        vehicleIdBeingDeleted = vehicle.vehicle_id;
+        document.getElementById("vehicleDeleteName").textContent =
+          `${vehicle.vehicle_id} - ${vehicle.plate_number}`;
+        openVehicleModal("vehicleDeleteModal");
+      }
+
+      function openVehicleEdit(vehicle) {
+        vehicleIdBeingEdited = vehicle.vehicle_id;
+        document.getElementById("editVehicleId").value = vehicle.vehicle_id;
+        document.getElementById("editVehiclePlate").value =
+          vehicle.plate_number;
+        document.getElementById("editVehicleType").value = vehicle.vehicle_type;
+        openVehicleModal("vehicleEditModal");
+      }
+
+      function openVehicleModal(id) {
+        document.getElementById(id).classList.add("active");
+      }
+
+      function closeVehicleModal(id) {
+        document.getElementById(id).classList.remove("active");
+      }
+
+      async function confirmDeleteVehicle() {
+        if (!vehicleIdBeingDeleted) return;
+        const resp = await fetch(
+          `/api/vehicles/${encodeURIComponent(vehicleIdBeingDeleted)}`,
+          { method: "DELETE" },
+        );
+        const data = await resp.json();
+        showNotice(data.message, !resp.ok);
+        if (resp.ok) {
+          closeVehicleModal("vehicleDeleteModal");
+          vehicleIdBeingDeleted = null;
+          await loadVehicles();
+          await loadVehiclesDropdown();
+        }
+      }
+
+      async function handleUpdateVehicle(event) {
+        event.preventDefault();
+        if (!vehicleIdBeingEdited) return;
+        const resp = await fetch(
+          `/api/vehicles/${encodeURIComponent(vehicleIdBeingEdited)}`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              vehicle_id: document.getElementById("editVehicleId").value.trim(),
+              plate_number: document
+                .getElementById("editVehiclePlate")
+                .value.trim(),
+              vehicle_type: document.getElementById("editVehicleType").value,
+            }),
+          },
+        );
+        const data = await resp.json();
+        showNotice(data.message, !resp.ok);
+        if (resp.ok) {
+          closeVehicleModal("vehicleEditModal");
+          vehicleIdBeingEdited = null;
+          await loadVehicles();
+          await loadVehiclesDropdown();
+        }
+      }
+
+      async function handleCreateVehicle(e) {
+        e.preventDefault();
+        const resp = await fetch("/api/vehicles", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            vehicle_id: document.getElementById("v_id").value.trim(),
+            plate_number: document.getElementById("v_plate").value.trim(),
+            vehicle_type: document.getElementById("v_type").value,
+          }),
+        });
+        const data = await resp.json();
+        showNotice(data.message, !resp.ok);
+        if (resp.ok) {
+          document.getElementById("v_id").value = "";
+          document.getElementById("v_plate").value = "";
+          document.getElementById("v_type").value = "";
+          await loadVehicles();
+          await loadVehiclesDropdown();
+        }
+      }
+
+      let locationsById = {};
+      let slotsById = {};
+      let stationsById = {};
+      let stationsData = [];
+      let ratesById = {};
+
+      async function loadLocations() {
+        const resp = await fetch("/api/locations");
+        const data = await resp.json();
+        if (!resp.ok) return showNotice(data.message, true);
+        locationsById = Object.fromEntries(
+          data.data.map((location) => [location.location_id, location]),
+        );
+        const locationOptions = data.data
+          .map(
+            (location) =>
+              `<option value="${escapeHtml(location.location_id)}">${escapeHtml(location.location_name)}</option>`,
+          )
+          .join("");
+        const activeLocationOptions = data.data
+          .filter((location) => location.status === "Active")
+          .map(
+            (location) =>
+              `<option value="${escapeHtml(location.location_id)}">${escapeHtml(location.location_name)}</option>`,
+          )
+          .join("");
+        const setOptions = (id, firstOption, options = locationOptions) => {
+          const select = document.getElementById(id);
+          if (!select) return;
+          const oldValue = select.value;
+          select.innerHTML =
+            `<option value="">${firstOption}</option>` + options;
+          if ([...select.options].some((option) => option.value === oldValue))
+            select.value = oldValue;
+        };
+        setOptions("filterSlotLocation", "Tất cả khu vực");
+        setOptions("quickLocFilter", "Tất cả khu vực");
+        setOptions(
+          "slot_location",
+          "-- Chọn bãi đỗ đang hoạt động --",
+          activeLocationOptions,
+        );
+        setOptions("rate_location", "-- Chọn bãi đỗ --", activeLocationOptions);
+        setOptions("rateListLocation", "Tất cả các bãi đỗ");
+        setOptions(
+          "station_location",
+          "-- Chọn khu vực trạm sạc --",
+          activeLocationOptions,
+        );
+        const body = document.getElementById("locationsTableBody");
+        if (body) {
+          body.innerHTML =
+            data.data
+              .map(
+                (location) => `
+            <tr>
+                <td class="fw-bold">${escapeHtml(location.location_id)}</td>
+                <td>${escapeHtml(location.location_name)}</td>
+                <td>${escapeHtml(location.address)}</td>
+                <td>${translateStatus(location.status)}</td>
+                <td><div class="d-flex gap-1"><button type="button" class="btn btn-secondary-dark btn-sm" data-location-action="edit" data-location-id="${escapeHtml(location.location_id)}" ${location.is_locked ? `disabled title="${escapeHtml(location.lock_reason)}"` : ""}>Sửa</button><button type="button" class="btn btn-danger btn-sm" data-location-action="delete" data-location-id="${escapeHtml(location.location_id)}" ${location.is_locked ? `disabled title="${escapeHtml(location.lock_reason)}"` : ""}>Xóa</button></div></td>
+            </tr>
+        `,
+              )
+              .join("") ||
+            '<tr><td colspan="5" class="text-center">Chưa có bãi đỗ. Hãy thêm bãi đỗ để bắt đầu cấu hình.</td></tr>';
+          document
+            .querySelectorAll("[data-location-action]")
+            .forEach((button) => {
+              button.addEventListener("click", () =>
+                button.dataset.locationAction === "edit"
+                  ? editLocation(locationsById[button.dataset.locationId])
+                  : handleDeleteLocation(button.dataset.locationId),
+              );
+            });
+        }
+        return data.data;
+      }
+
+      function resetLocationForm() {
+        document.getElementById("locationForm").reset();
+        document.getElementById("location_edit_id").value = "";
+        document.getElementById("locationFormTitle").textContent =
+          "Thêm bãi đỗ";
+        document.getElementById("locationSaveBtn").textContent = "Thêm bãi";
+        document.getElementById("locationCancelBtn").classList.add("d-none");
+      }
+
+      function editLocation(location) {
+        if (!location) return;
+        if (location.is_locked)
+          return showNotice(
+            location.lock_reason ||
+              "Bãi đang có xe hoặc lịch đặt chưa kết thúc.",
+            true,
+          );
+        document.getElementById("location_edit_id").value =
+          location.location_id;
+        document.getElementById("location_name").value = location.location_name;
+        document.getElementById("location_address").value = location.address;
+        document.getElementById("location_status").value = location.status;
+        document.getElementById("locationFormTitle").textContent =
+          `Sửa bãi đỗ ${location.location_id}`;
+        document.getElementById("locationSaveBtn").textContent = "Lưu thay đổi";
+        document.getElementById("locationCancelBtn").classList.remove("d-none");
+        document
+          .getElementById("locationForm")
+          .scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+
+      async function handleSaveLocation(event) {
+        event.preventDefault();
+        const locationId = document.getElementById("location_edit_id").value;
+        const resp = await fetch(
+          locationId
+            ? `/api/locations/${encodeURIComponent(locationId)}`
+            : "/api/locations",
+          {
+            method: locationId ? "PUT" : "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              location_name: document
+                .getElementById("location_name")
+                .value.trim(),
+              address: document.getElementById("location_address").value.trim(),
+              status: document.getElementById("location_status").value,
+            }),
+          },
+        );
+        const data = await resp.json();
+        showNotice(data.message, !resp.ok);
+        if (resp.ok) {
+          resetLocationForm();
+          await loadLocations();
+          await loadSlots();
+        }
+      }
+
+      async function handleDeleteLocation(locationId) {
+        const previewResp = await fetch(
+          `/api/locations/${encodeURIComponent(locationId)}`,
+        );
+        const preview = await previewResp.json();
+        if (!previewResp.ok) return showNotice(preview.message, true);
+        const location = preview.data;
+        if (
+          location.status === "Active" &&
+          Number(location.unavailable_count) > 0
+        ) {
+          return showNotice(
+            "Bãi đang hoạt động chỉ được xóa khi tất cả vị trí đều còn trống.",
+            true,
+          );
+        }
+        pendingLocationDeleteId = locationId;
+        document.getElementById("locationDeleteId").textContent =
+          location.location_id;
+        document.getElementById("locationDeleteName").textContent =
+          location.location_name;
+        document.getElementById("locationDeleteAddress").textContent =
+          location.address;
+        document.getElementById("locationDeleteModal").classList.add("active");
+        document.getElementById("confirmDeleteLocationBtn").onclick =
+          confirmDeleteLocation;
+      }
+
+      async function confirmDeleteLocation() {
+        if (!pendingLocationDeleteId) return;
+        const resp = await fetch(
+          `/api/locations/${encodeURIComponent(pendingLocationDeleteId)}`,
+          { method: "DELETE" },
+        );
+        const data = await resp.json();
+        closeVehicleModal("locationDeleteModal");
+        pendingLocationDeleteId = null;
+        showNotice(data.message, !resp.ok);
+        if (resp.ok) {
+          await loadLocations();
+          await loadSlots();
+        }
+      }
+
+      async function loadStations() {
+        const resp = await fetch("/api/stations");
+        const data = await resp.json();
+        if (!resp.ok) return showNotice(data.message, true);
+        stationsData = data.data;
+        stationsById = Object.fromEntries(
+          data.data.map((station) => [station.station_id, station]),
+        );
+        const filter = document.getElementById("stationFilterId");
+        if (filter) {
+          const oldValue = filter.value;
+          const locations = [
+            ...new Map(
+              data.data.map((station) => [station.location_id, station]),
+            ).values(),
+          ];
+          filter.innerHTML =
+            '<option value="">Tất cả bãi đỗ có trạm</option>' +
+            locations
+              .map(
+                (station) =>
+                  `<option value="${escapeHtml(station.location_id)}">${escapeHtml(station.location_name)}</option>`,
+              )
+              .join("");
+          if ([...filter.options].some((option) => option.value === oldValue))
+            filter.value = oldValue;
+        }
+        const sessionSelect = document.getElementById("s_station");
+        if (sessionSelect) {
+          const oldValue = sessionSelect.value;
+          sessionSelect.innerHTML =
+            '<option value="">-- Chọn trụ sạc --</option>' +
+            data.data
+              .map(
+                (station) =>
+                  `<option value="${escapeHtml(station.station_id)}" data-slot="${escapeHtml(station.slot_id)}">${escapeHtml(station.station_id)} · ${escapeHtml(station.charger_type)} (${escapeHtml(station.slot_id)})</option>`,
+              )
+              .join("");
+          if (
+            [...sessionSelect.options].some(
+              (option) => option.value === oldValue,
+            )
+          )
+            sessionSelect.value = oldValue;
+        }
+        renderStationList();
+      }
+
+      function renderStationList() {
+        const body = document.getElementById("stationsTableBody");
+        if (!body) return;
+        const stationFilter =
+          document.getElementById("stationFilterId")?.value || "";
+        const statusFilter =
+          document.getElementById("stationFilterStatus")?.value || "";
+        const rows = stationsData.filter(
+          (st) =>
+            (!stationFilter || st.location_id === stationFilter) &&
+            (!statusFilter || st.status === statusFilter),
+        );
+        body.innerHTML =
+          rows
+            .map(
+              (st) => `
+        <tr>
+            <td class="fw-bold">${escapeHtml(st.station_id)}</td>
+            <td class="fw-bold emerald-text">${escapeHtml(st.slot_id)}</td>
+            <td>${escapeHtml(st.location_name)}</td>
+            <td>Ô ${st.position}</td>
+            <td>${escapeHtml(st.charger_type)} (${st.kw_rate} kW)</td>
+            <td>${translateStatus(st.status)}</td>
+            <td><div class="d-flex gap-1"><button type="button" class="btn btn-secondary-dark btn-sm" data-station-action="edit" data-station-id="${escapeHtml(st.station_id)}" ${st.is_locked ? `disabled title="${escapeHtml(st.lock_reason || "Trụ sạc đang được sử dụng")}"` : ""}>Sửa</button><button type="button" class="btn btn-danger btn-sm" data-station-action="delete" data-station-id="${escapeHtml(st.station_id)}" ${st.is_locked ? `disabled title="${escapeHtml(st.lock_reason || "Trụ sạc đang được sử dụng")}"` : ""}>Xóa</button></div></td>
+        </tr>
+    `,
+            )
+            .join("") ||
+          `<tr><td colspan="7" class="text-center" style="color:var(--text-muted);">${stationsData.length ? "Không có trạm phù hợp với bộ lọc." : "Chưa có trạm sạc. Tạo chỗ đỗ có sạc trước rồi thêm trạm tại đây."}</td></tr>`;
+        document.querySelectorAll("[data-station-action]").forEach((button) => {
+          button.addEventListener("click", () =>
+            button.dataset.stationAction === "edit"
+              ? editStation(stationsById[button.dataset.stationId])
+              : handleDeleteStation(button.dataset.stationId),
+          );
+        });
+      }
+
+      async function loadStationSlotOptions() {
+        const select = document.getElementById("station_slot");
+        if (!select) return;
+        const locationId =
+          document.getElementById("station_location")?.value || "";
+        if (!locationId) {
+          select.innerHTML =
+            '<option value="">-- Chọn chỗ đỗ có sạc --</option>';
+          select.disabled = true;
+          return;
+        }
+        const resp = await fetch(
+          `/api/slots?location_id=${encodeURIComponent(locationId)}&slot_type=Charging&only_available=false`,
+        );
+        const data = await resp.json();
+        if (!resp.ok) return showNotice(data.message, true);
+        const candidates = data.data.filter(
+          (slot) => !slot.station_id && slot.status !== "Maintenance",
+        );
+        select.innerHTML =
+          '<option value="">-- Chọn chỗ đỗ có sạc --</option>' +
+          candidates
+            .map(
+              (slot) =>
+                `<option value="${escapeHtml(slot.slot_id)}">Ô ${slot.position}</option>`,
+            )
+            .join("");
+        select.disabled = false;
+      }
+
+      function resetStationForm() {
+        document.getElementById("stationForm").reset();
+        document.getElementById("station_edit_id").value = "";
+        document.getElementById("station_location").value = "";
+        document.getElementById("station_location").disabled = false;
+        document.getElementById("station_slot").disabled = false;
+        document.getElementById("stationFormTitle").textContent =
+          "Thêm trạm sạc và cấu hình cổng";
+        document.getElementById("stationSaveBtn").textContent = "Thêm trạm";
+        document.getElementById("stationCancelBtn").classList.add("d-none");
+        loadLocations().then(loadStationSlotOptions);
+      }
+
+      function editStation(station) {
+        if (!station) return;
+        if (station.is_locked)
+          return showNotice(
+            station.lock_reason || "Trụ sạc đang có phiên sạc hoặc lịch đặt.",
+            true,
+          );
+        document.getElementById("station_edit_id").value = station.station_id;
+        document.getElementById("station_location").innerHTML =
+          `<option value="${escapeHtml(station.location_id)}">${escapeHtml(station.location_name)}</option>`;
+        document.getElementById("station_location").value = station.location_id;
+        document.getElementById("station_location").disabled = true;
+        const slotSelect = document.getElementById("station_slot");
+        slotSelect.innerHTML = `<option value="${escapeHtml(station.slot_id)}">Ô ${station.position}</option>`;
+        slotSelect.value = station.slot_id;
+        slotSelect.disabled = true;
+        document.getElementById("station_charger_type").value =
+          station.charger_type;
+        document.getElementById("station_kw_rate").value = station.kw_rate;
+        document.getElementById("station_status").value =
+          station.status === "Busy" ? "Online" : station.status;
+        document.getElementById("stationFormTitle").textContent =
+          `Sửa trạm ${station.station_id}`;
+        document.getElementById("stationSaveBtn").textContent = "Lưu thay đổi";
+        document.getElementById("stationCancelBtn").classList.remove("d-none");
+        document
+          .getElementById("stationForm")
+          .scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+
+      async function handleSaveStation(event) {
+        event.preventDefault();
+        const stationId = document.getElementById("station_edit_id").value;
+        const payload = {
+          charger_type: document
+            .getElementById("station_charger_type")
+            .value.trim(),
+          kw_rate: document.getElementById("station_kw_rate").value,
+          status: document.getElementById("station_status").value,
+        };
+        if (!stationId) {
+          payload.location_id =
+            document.getElementById("station_location").value;
+          payload.slot_id = document.getElementById("station_slot").value;
+        }
+        const resp = await fetch(
+          stationId
+            ? `/api/stations/${encodeURIComponent(stationId)}`
+            : "/api/stations",
+          {
+            method: stationId ? "PUT" : "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          },
+        );
+        const data = await resp.json();
+        showNotice(data.message, !resp.ok);
+        if (resp.ok) {
+          resetStationForm();
+          await loadStations();
+          await loadSlots();
+        }
+      }
+
+      async function handleDeleteStation(stationId) {
+        if (
+          !confirm(
+            `Xóa trạm ${stationId}? Trạm có lịch sử sẽ được giữ lại và cần chuyển sang ngoại tuyến.`,
+          )
+        )
+          return;
+        const resp = await fetch(
+          `/api/stations/${encodeURIComponent(stationId)}`,
+          { method: "DELETE" },
+        );
+        const data = await resp.json();
+        showNotice(data.message, !resp.ok);
+        if (resp.ok) {
+          await loadStations();
+          await loadSlots();
+          await loadStationSlotOptions();
+        }
+      }
+
+      async function loadSlots() {
+        const filterLocation = document.getElementById("filterSlotLocation");
+        const filterType = document.getElementById("filterSlotType");
+        const filterAvailable = document.getElementById("filterOnlyAvailable");
+        if (!filterLocation || !filterType || !filterAvailable) return;
+        const url = `/api/slots?location_id=${encodeURIComponent(filterLocation.value)}&slot_type=${encodeURIComponent(filterType.value)}&only_available=false&admin_only_available=${filterAvailable.checked}`;
+        const resp = await fetch(url);
+        const data = await resp.json();
+        if (!resp.ok) return showNotice(data.message, true);
+        slotsById = Object.fromEntries(
+          data.data.map((slot) => [slot.slot_id, slot]),
+        );
+        const body = document.getElementById("slotsTableBody");
+        body.innerHTML =
+          data.data
+            .map(
+              (s) => `
+        <tr>
+            <td class="fw-bold">${escapeHtml(s.slot_id)}</td>
+            <td>${escapeHtml(s.location_name)}</td>
+            <td>Ô ${s.position}</td>
+            <td>${s.slot_type === "Charging" ? '<span class="pill-emerald">Chỗ có trụ sạc</span>' : '<span class="pill-slate">Chỗ không có trụ sạc</span>'}</td>
+            <td>${s.slot_type === "Standard" ? "Không có trụ sạc" : s.charger_type ? `${escapeHtml(s.charger_type)} (${s.kw_rate} kW)` : "Chưa gắn trụ sạc"}</td>
+            <td>${translateStatus(s.status)}</td>
+            <td><div class="d-flex flex-wrap gap-1"><button type="button" class="btn btn-secondary-dark btn-sm" data-slot-action="edit" data-slot-id="${escapeHtml(s.slot_id)}" ${s.is_locked ? `disabled title="${escapeHtml(s.lock_reason)}"` : ""}>Sửa</button><button type="button" class="btn btn-danger btn-sm" data-slot-action="delete" data-slot-id="${escapeHtml(s.slot_id)}" ${s.is_locked ? `disabled title="${escapeHtml(s.lock_reason)}"` : ""}>Xóa</button>${s.status === "Available" ? `<button type="button" class="btn btn-secondary-dark btn-sm" data-slot-action="maintenance" data-slot-id="${escapeHtml(s.slot_id)}" ${s.is_locked ? `disabled title="${escapeHtml(s.lock_reason)}"` : ""}>Bảo trì</button>` : s.status === "Maintenance" ? `<button type="button" class="btn btn-emerald btn-sm" data-slot-action="available" data-slot-id="${escapeHtml(s.slot_id)}">Mở lại</button>` : ""}</div></td>
+        </tr>
+    `,
+            )
+            .join("") ||
+          '<tr><td colspan="7" class="text-center" style="color:var(--text-muted);">Chưa có chỗ đỗ phù hợp.</td></tr>';
+        document.querySelectorAll("[data-slot-action]").forEach((button) => {
+          const action = button.dataset.slotAction;
+          button.addEventListener("click", () => {
+            const slotId = button.dataset.slotId;
+            if (action === "edit") editSlot(slotsById[slotId]);
+            else if (action === "delete") handleDeleteSlot(slotId);
+            else
+              updateSlotStatus(
+                slotId,
+                action === "maintenance" ? "Maintenance" : "Available",
+              );
+          });
+        });
+      }
+
+      function resetSlotForm() {
+        document.getElementById("slotForm").reset();
+        document.getElementById("slot_edit_id").value = "";
+        document.getElementById("slot_location").disabled = false;
+        document.getElementById("slot_type").disabled = false;
+        document.getElementById("slotFormTitle").textContent = "Thêm chỗ đỗ";
+        document.getElementById("slotSaveBtn").textContent = "Thêm chỗ";
+        document.getElementById("slotCancelBtn").classList.add("d-none");
+      }
+
+      function editSlot(slot) {
+        if (!slot) return;
+        if (slot.is_locked)
+          return showNotice(
+            slot.lock_reason || "Vị trí đang có xe hoặc lịch đặt.",
+            true,
+          );
+        document.getElementById("slot_edit_id").value = slot.slot_id;
+        document.getElementById("slot_location").value = slot.location_id;
+        document.getElementById("slot_type").value = slot.slot_type;
+        document.getElementById("slot_position").value = slot.position;
+        document.getElementById("slotFormTitle").textContent =
+          `Sửa chỗ ${slot.slot_id}`;
+        document.getElementById("slotSaveBtn").textContent = "Lưu thay đổi";
+        document.getElementById("slotCancelBtn").classList.remove("d-none");
+        document
+          .getElementById("slotForm")
+          .scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+
+      async function handleSaveSlot(event) {
+        event.preventDefault();
+        const slotId = document.getElementById("slot_edit_id").value;
+        const resp = await fetch(
+          slotId ? `/api/slots/${encodeURIComponent(slotId)}` : "/api/slots",
+          {
+            method: slotId ? "PUT" : "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              location_id: document.getElementById("slot_location").value,
+              slot_type: document.getElementById("slot_type").value,
+              position: document.getElementById("slot_position").value,
+            }),
+          },
+        );
+        const data = await resp.json();
+        showNotice(data.message, !resp.ok);
+        if (resp.ok) {
+          resetSlotForm();
+          await loadSlots();
+          await loadStationSlotOptions();
+        }
+      }
+
+      async function handleDeleteSlot(slotId) {
+        if (
+          !confirm(
+            `Xóa chỗ đỗ ${slotId}? Chỗ đã được đặt hoặc có lịch sử sạc sẽ không thể xóa.`,
+          )
+        )
+          return;
+        const resp = await fetch(`/api/slots/${encodeURIComponent(slotId)}`, {
+          method: "DELETE",
+        });
+        const data = await resp.json();
+        showNotice(data.message, !resp.ok);
+        if (resp.ok) {
+          await loadSlots();
+          await loadStationSlotOptions();
+        }
+      }
+
+      async function updateSlotStatus(slotId, status) {
+        const resp = await fetch(
+          `/api/slots/${encodeURIComponent(slotId)}/status`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ status }),
+          },
+        );
+        const data = await resp.json();
+        showNotice(data.message, !resp.ok);
+        if (resp.ok) await loadSlots();
+      }
+
+      async function loadRates() {
+        const resp = await fetch("/api/rates", { cache: "no-store" });
+        const data = await resp.json();
+        if (!resp.ok) return showNotice(data.message, true);
+        ratesById = Object.fromEntries(
+          data.data.map((rate) => [rate.rate_id, rate]),
+        );
+        const labels = {
+          Peak: "Cao điểm",
+          Normal: "Bình thường",
+          "Off-Peak": "Thấp điểm",
+        };
+        const selectedLocation =
+          document.getElementById("rateListLocation")?.value || "";
+        const visibleRates = data.data.filter(
+          (rate) => !selectedLocation || rate.location_id === selectedLocation,
+        );
+        document.getElementById("ratesTableBody").innerHTML =
+          visibleRates
+            .map((rate) => {
+              const amount =
+                rate.kind === "parking"
+                  ? `${formatVND(rate.price_per_hour)} / giờ`
+                  : rate.kind === "both"
+                    ? `${formatVND(rate.price_per_hour)} / giờ · ${formatVND(rate.charging_amount)} / kWh`
+                    : rate.kind === "charging"
+                      ? `${formatVND(rate.rate_per_kwh)} / kWh`
+                      : formatVND(rate.amount);
+              return `<tr>
+            <td>${escapeHtml(rate.location_name)}</td>
+            <td>${rate.kind === "parking" ? "Đỗ xe" : rate.kind === "both" ? "Đỗ xe và sạc điện" : rate.kind === "charging" ? "Sạc điện" : "Phí vi phạm"}</td>
+            <td>${rate.kind === "violation" ? "—" : labels[rate.rate_type] || escapeHtml(rate.rate_type)}</td>
+            <td>${rate.kind === "violation" ? "Luôn áp dụng" : `${String(rate.effective_from).slice(0, 5)} – ${String(rate.effective_to).slice(0, 5)}`}</td>
+            <td class="fw-bold emerald-text">${amount}</td>
+            <td><div class="d-flex gap-1"><button type="button" class="btn btn-secondary-dark btn-sm" data-rate-action="edit" data-rate-id="${escapeHtml(rate.rate_id)}" ${rate.is_locked ? `disabled title="${escapeHtml(rate.lock_reason)}"` : ""}>Sửa</button><button type="button" class="btn btn-danger btn-sm" data-rate-action="delete" data-rate-id="${escapeHtml(rate.rate_id)}" ${rate.is_locked ? `disabled title="${escapeHtml(rate.lock_reason)}"` : ""}>Xóa</button></div></td>
+        </tr>`;
+            })
+            .join("") ||
+          '<tr><td colspan="6" class="text-center" style="color:var(--text-muted);">Chưa có mức giá cho bãi đỗ này. Hãy thêm một mức giá mới.</td></tr>';
+        document.querySelectorAll("[data-rate-action]").forEach((button) => {
+          button.addEventListener("click", () =>
+            button.dataset.rateAction === "edit"
+              ? editRate(ratesById[button.dataset.rateId])
+              : handleDeleteRate(button.dataset.rateId),
+          );
+        });
+      }
+
+      function resetRateForm() {
+        document.getElementById("rateForm").reset();
+        document.getElementById("rate_edit_id").value = "";
+        document.querySelector('#rate_kind option[value="charging"]')?.remove();
+        document.getElementById("rate_kind").disabled = false;
+        document.getElementById("rate_location").disabled = false;
+        updateRateUnit();
+        document.getElementById("rateFormTitle").textContent = "Thêm mức giá";
+        document.getElementById("rateSaveBtn").textContent = "Thêm giá";
+        document.getElementById("rateCancelBtn").classList.add("d-none");
+      }
+
+      function updateRateUnit() {
+        const kind = document.getElementById("rate_kind").value;
+        const schedule =
+          kind === "parking" || kind === "charging" || kind === "both";
+        document
+          .querySelectorAll(".rate-schedule-field")
+          .forEach((el) => el.classList.toggle("d-none", !schedule));
+        document
+          .getElementById("rateParkingWrap")
+          .classList.toggle("d-none", !["parking", "both"].includes(kind));
+        document
+          .getElementById("rateChargingWrap")
+          .classList.toggle("d-none", kind !== "both" && kind !== "charging");
+        document
+          .getElementById("rateViolationWrap")
+          .classList.toggle("d-none", kind !== "violation");
+        document.getElementById("rate_from").required = schedule;
+        document.getElementById("rate_to").required = schedule;
+        document.getElementById("rate_parking_value").required = [
+          "parking",
+          "both",
+        ].includes(kind);
+        document.getElementById("rate_charging_value").required =
+          kind === "both" || kind === "charging";
+        document.getElementById("rate_violation_value").required =
+          kind === "violation";
+      }
+
+      function editRate(rate) {
+        if (!rate || !rate.is_current) return;
+        if (rate.is_locked)
+          return showNotice(
+            rate.lock_reason || "Bãi đang có xe hoặc lịch đặt chưa kết thúc.",
+            true,
+          );
+        if (
+          rate.kind === "charging" &&
+          !document.querySelector('#rate_kind option[value="charging"]')
+        ) {
+          document
+            .getElementById("rate_kind")
+            .insertAdjacentHTML(
+              "beforeend",
+              '<option value="charging">Sạc điện (mức hiện có)</option>',
+            );
+        }
+        document.getElementById("rate_edit_id").value = rate.rate_id;
+        document.getElementById("rate_kind").value = rate.kind;
+        document.getElementById("rate_kind").disabled = true;
+        document.getElementById("rate_location").value = rate.location_id;
+        document.getElementById("rate_location").disabled = true;
+        updateRateUnit();
+        if (
+          rate.kind === "parking" ||
+          rate.kind === "charging" ||
+          rate.kind === "both"
+        ) {
+          document.getElementById("rate_type").value = rate.rate_type;
+          document.getElementById("rate_from").value = String(
+            rate.effective_from,
+          ).slice(0, 5);
+          document.getElementById("rate_to").value = String(
+            rate.effective_to,
+          ).slice(0, 5);
+          if (rate.kind === "both") {
+            document.getElementById("rate_parking_value").value =
+              rate.price_per_hour;
+            document.getElementById("rate_charging_value").value =
+              rate.charging_amount;
+          } else if (rate.kind === "parking")
+            document.getElementById("rate_parking_value").value =
+              rate.price_per_hour;
+          else
+            document.getElementById("rate_charging_value").value =
+              rate.rate_per_kwh;
+        } else {
+          document.getElementById("rate_violation_value").value = rate.amount;
+        }
+        document.getElementById("rateFormTitle").textContent =
+          `Sửa mức giá ${rate.rate_id}`;
+        document.getElementById("rateSaveBtn").textContent = "Lưu thay đổi";
+        document.getElementById("rateCancelBtn").classList.remove("d-none");
+        document
+          .getElementById("rateForm")
+          .scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+
+      async function handleSaveRate(event) {
+        event.preventDefault();
+        const rateId = document.getElementById("rate_edit_id").value;
+        const kind = document.getElementById("rate_kind").value;
+        const payload = {
+          location_id: document.getElementById("rate_location").value,
+          kind,
+          value:
+            kind === "violation"
+              ? document.getElementById("rate_violation_value").value
+              : kind === "charging"
+                ? document.getElementById("rate_charging_value").value
+                : document.getElementById("rate_parking_value").value,
+          parking_value: document.getElementById("rate_parking_value").value,
+          charging_value: document.getElementById("rate_charging_value").value,
+          rate_type: document.getElementById("rate_type").value,
+          effective_from: document.getElementById("rate_from").value,
+          effective_to: document.getElementById("rate_to").value,
+        };
+        const resp = await fetch(
+          rateId ? `/api/rates/${encodeURIComponent(rateId)}` : "/api/rates",
+          {
+            method: rateId ? "PUT" : "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          },
+        );
+        const data = await resp.json();
+        showNotice(data.message, !resp.ok);
+        if (resp.ok) {
+          resetRateForm();
+          await loadRates();
+        }
+      }
+
+      async function handleDeleteRate(rateId) {
+        if (
+          !confirm(
+            `Xóa mức giá ${rateId}? Mức giá đã được dùng sẽ không thể xóa.`,
+          )
+        )
+          return;
+        const resp = await fetch(`/api/rates/${encodeURIComponent(rateId)}`, {
+          method: "DELETE",
+        });
+        const data = await resp.json();
+        showNotice(data.message, !resp.ok);
+        if (resp.ok) await loadRates();
+      }
+
+      async function loadReservations() {
+        const resp = await fetch("/api/reservations");
+        const data = await resp.json();
+        if (!resp.ok) return showNotice(data.message, true);
+        document.getElementById("reservationsTableBody").innerHTML =
+          data.data
+            .map(
+              (r) => `
+        <tr>
+            <td class="fw-bold">${escapeHtml(r.reservation_id)}</td>
+            <td class="fw-bold">${escapeHtml(r.vehicle_id)}</td>
+            <td>${escapeHtml(r.location_name)}</td>
+            <td>Ô ${r.position}</td>
+            <td>${formatDateTimeVI(r.start_time)}</td>
+            <td>${formatDateTimeVI(r.end_time)}</td>
+            <td class="fw-bold emerald-text">${formatVND(r.total_amount)}</td>
+            <td>${translateStatus(r.payment_status)}</td>
+            <td>${
+              r.vehicle_departed_at
+                ? '<span class="pill-emerald">Đã rời chỗ</span>'
+                : `<button type="button" class="btn btn-secondary-dark btn-sm" data-reservation-depart="${escapeHtml(r.reservation_id)}">Đã rời chỗ</button>`
+            }</td>
+        </tr>
+    `,
+            )
+            .join("") ||
+          '<tr><td colspan="9" class="text-center" style="color:var(--text-muted);">Không có đặt chỗ đang chờ thanh toán.</td></tr>';
+        document
+          .querySelectorAll("[data-reservation-depart]")
+          .forEach((button) => {
+            button.addEventListener("click", () =>
+              handleReservationDepart(button.dataset.reservationDepart),
+            );
+          });
+      }
+
+      async function handleReservationDepart(reservationId) {
+        const resp = await fetch(
+          `/api/reservations/${encodeURIComponent(reservationId)}/depart`,
+          { method: "PUT" },
+        );
+        const data = await resp.json();
+        showNotice(data.message, !resp.ok);
+        if (resp.ok) await loadReservations();
+      }
+
+      async function handleCreateReservation() {
+        if (!selectedReservationSlot)
+          return showNotice("Hãy chọn một chỗ đỗ trước khi xác nhận.", true);
+        const payload = {
+          vehicle_id: document.getElementById("r_vehicle").value,
+          slot_id: document.getElementById("r_slot").value,
+          start_time: document.getElementById("r_start").value,
+          end_time: document.getElementById("r_end").value,
+        };
+        const resp = await fetch("/api/reservations", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const data = await resp.json();
+        showNotice(data.message, !resp.ok);
+        if (resp.ok) {
+          clearSelectedReservation();
+          document
+            .getElementById("reservationSearchResults")
+            .classList.add("d-none");
+          await loadReservations();
+        }
+      }
+
+      async function loadSessions() {
+        const resp = await fetch("/api/sessions");
+        const data = await resp.json();
+        if (!resp.ok) return showNotice(data.message, true);
+        const activeSessions = data.data.filter(
+          (s) => s.session_status === "Charging",
+        );
+        const pendingSessions = data.data.filter(
+          (s) =>
+            s.session_status === "Completed" && s.payment_status === "Pending",
+        );
+        document.getElementById("activeSessionsTableBody").innerHTML =
+          activeSessions
+            .map(
+              (s) => `
+        <tr>
+            <td class="fw-bold">${escapeHtml(s.vehicle_id)}</td>
+            <td class="fw-bold">${escapeHtml(s.plate_number)}</td>
+            <td>${formatDateTimeVI(s.start_date_time)}</td>
+            <td><button type="button" class="btn btn-emerald btn-sm" data-session-action="finish" data-session-id="${escapeHtml(s.session_id)}">Kết thúc sạc</button></td>
+        </tr>
+    `,
+            )
+            .join("") ||
+          '<tr><td colspan="4" class="text-center" style="color:var(--text-muted);">Không có phiên sạc đang hoạt động.</td></tr>';
+        document.getElementById("sessionsTableBody").innerHTML =
+          pendingSessions
+            .map(
+              (s) => `
+        <tr>
+            <td class="fw-bold">${escapeHtml(s.vehicle_id)}</td>
+            <td class="fw-bold">${escapeHtml(s.plate_number)}</td>
+            <td>${formatDateTimeVI(s.start_date_time)}</td>
+            <td>${formatDateTimeVI(s.end_date_time)}</td>
+            <td>${s.energy_consumed_kwh == null ? "—" : `<span class="pill-emerald">${s.energy_consumed_kwh} kWh (ước tính)</span>`}</td>
+            <td>${formatVND(s.rate_per_kwh)}</td>
+            <td class="fw-bold emerald-text">${s.charging_cost == null ? "—" : formatVND(s.charging_cost)}</td>
+            <td><span class="pill-amber">Chờ thanh toán</span></td>
+        </tr>
+    `,
+            )
+            .join("") ||
+          '<tr><td colspan="8" class="text-center" style="color:var(--text-muted);">Chưa có phiên sạc chờ thanh toán.</td></tr>';
+        document
+          .querySelectorAll(
+            '#activeSessionsTableBody [data-session-action="finish"]',
+          )
+          .forEach((button) => {
+            button.addEventListener("click", () =>
+              handleFinishSession(button.dataset.sessionId),
+            );
+          });
+      }
+
+      async function handleCreateSession(e) {
+        e.preventDefault();
+        const resp = await fetch("/api/sessions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            reservation_id: document.getElementById("s_res_id").value,
+            vehicle_id: document.getElementById("s_vehicle").value,
+          }),
+        });
+        const data = await resp.json();
+        showNotice(data.message, !resp.ok);
+        if (resp.ok) {
+          document.getElementById("s_res_id").value = "";
+          document.getElementById("s_vehicle").value = "";
+          await loadReservationOptions();
+          await loadSessions();
+        }
+      }
+
+      async function handleFinishSession(sessionId) {
+        const resp = await fetch(
+          `/api/sessions/${encodeURIComponent(sessionId)}/finish`,
+          { method: "PUT" },
+        );
+        const data = await resp.json();
+        showNotice(data.message, !resp.ok);
+        if (resp.ok) await loadSessions();
+      }
+
+      let payableReservationsById = {};
+
+      async function loadBilling() {
+        const resp = await fetch("/api/billing");
+        const data = await resp.json();
+        if (!resp.ok) return showNotice(data.message, true);
+        payableReservationsById = Object.fromEntries(
+          data.payable.map((item) => [item.reservation_id, item]),
+        );
+        const select = document.getElementById("pay_res_id");
+        select.innerHTML =
+          '<option value="">-- Chọn mã đặt chỗ --</option>' +
+          data.payable
+            .map(
+              (item) =>
+                `<option value="${escapeHtml(item.reservation_id)}">${escapeHtml(item.reservation_id)} · ${escapeHtml(item.plate_number)} · ${formatDateTimeVI(item.start_time)}</option>`,
+            )
+            .join("");
+        document.getElementById("paymentDetails").classList.add("d-none");
+      }
+
+      function showPaymentDetails() {
+        const item =
+          payableReservationsById[document.getElementById("pay_res_id").value];
+        const details = document.getElementById("paymentDetails");
+        if (!item) {
+          details.classList.add("d-none");
+          return;
+        }
+        document.getElementById("pay_location").textContent =
+          item.location_name;
+        document.getElementById("pay_position").textContent =
+          `Ô ${item.position}`;
+        document.getElementById("pay_parking").textContent = formatVND(
+          item.parking_cost,
+        );
+        document.getElementById("pay_charging").textContent = formatVND(
+          item.charging_cost,
+        );
+        document.getElementById("pay_violation").textContent = formatVND(
+          item.violation_cost,
+        );
+        document.getElementById("pay_total").textContent = formatVND(
+          item.total_cost,
+        );
+        document
+          .getElementById("payChargingWrap")
+          .classList.toggle("d-none", Number(item.charging_cost) <= 0);
+        document
+          .getElementById("payViolationWrap")
+          .classList.toggle("d-none", Number(item.violation_cost) <= 0);
+        details.classList.remove("d-none");
+      }
+
+      async function handlePayInvoice(e) {
+        e.preventDefault();
+        const resp = await fetch("/api/payments/pay", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            reservation_id: document.getElementById("pay_res_id").value.trim(),
+            payment_method: document.getElementById("pay_method").value,
+          }),
+        });
+        const data = await resp.json();
+        showNotice(data.message, !resp.ok);
+        if (resp.ok) await loadBilling();
+      }
+
+      window.onload = async () => {
+        document
+          .getElementById("confirmDeleteVehicleBtn")
+          .addEventListener("click", confirmDeleteVehicle);
+        document
+          .getElementById("vehicleEditForm")
+          .addEventListener("submit", handleUpdateVehicle);
+        const startInput = document.getElementById("r_start");
+        const endInput = document.getElementById("r_end");
+        const localNow = new Date();
+        localNow.setMinutes(
+          localNow.getMinutes() - localNow.getTimezoneOffset(),
+        );
+        const earliest = localNow.toISOString().slice(0, 16);
+        startInput.min = earliest;
+        endInput.min = earliest;
+        startInput.addEventListener("change", () => {
+          endInput.min = startInput.value || earliest;
+          if (endInput.value && endInput.value <= startInput.value)
+            endInput.value = "";
+          clearSelectedReservation();
+          document
+            .getElementById("reservationSearchResults")
+            .classList.add("d-none");
+        });
+        ["r_vehicle", "quickLocFilter", "quickTypeFilter", "r_end"].forEach(
+          (id) => {
+            document.getElementById(id).addEventListener("change", () => {
+              clearSelectedReservation();
+              document
+                .getElementById("reservationSearchResults")
+                .classList.add("d-none");
+            });
+          },
+        );
+        document.addEventListener("keydown", (event) => {
+          if (event.key === "Escape") {
+            closeVehicleModal("vehicleDeleteModal");
+            closeVehicleModal("vehicleEditModal");
+          }
+        });
+        const resp = await fetch("/api/auth/me");
+        const data = await resp.json();
+        if (data.authenticated) {
+          currentUser = data.user;
+          enterApp();
+        }
+      };
+    </script>
+  </body>
+</html>

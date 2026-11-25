@@ -151,7 +151,10 @@
         display: flex;
         align-items: center;
         gap: 10px;
-        transition: color 160ms var(--motion-ease), background-color 160ms var(--motion-ease), border-color 160ms var(--motion-ease);
+        transition:
+          color 160ms var(--motion-ease),
+          background-color 160ms var(--motion-ease),
+          border-color 160ms var(--motion-ease);
       }
       .nav-item-btn > span:first-child {
         width: 20px;
@@ -277,7 +280,10 @@
         font-weight: 600;
         padding: 10px 20px;
         border-radius: 10px;
-        transition: color 150ms var(--motion-ease), background-color 150ms var(--motion-ease), border-color 150ms var(--motion-ease);
+        transition:
+          color 150ms var(--motion-ease),
+          background-color 150ms var(--motion-ease),
+          border-color 150ms var(--motion-ease);
       }
       .btn-emerald:hover {
         background: var(--emerald-main);
@@ -290,7 +296,10 @@
         font-weight: 500;
         padding: 8px 14px;
         border-radius: 8px;
-        transition: color 150ms var(--motion-ease), background-color 150ms var(--motion-ease), border-color 150ms var(--motion-ease);
+        transition:
+          color 150ms var(--motion-ease),
+          background-color 150ms var(--motion-ease),
+          border-color 150ms var(--motion-ease);
       }
       .btn-secondary-dark:hover {
         background: #2b2d30;
@@ -676,9 +685,20 @@
         <div>
           <div class="sidebar-brand">
             <div class="logo-hexagon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+              <svg
+                viewBox="0 0 24 24"
+                width="21"
+                height="21"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.7"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
                 <rect x="5.5" y="3.5" width="10" height="15" rx="2" />
-                <path d="M9 7h3M11 9l-2 4h2l-1 3 3-5h-2l1-2M15.5 7.5h1.2a2.3 2.3 0 0 1 2.3 2.3v3.4a2.3 2.3 0 0 1-2.3 2.3M9 21h3" />
+                <path
+                  d="M9 7h3M11 9l-2 4h2l-1 3 3-5h-2l1-2M15.5 7.5h1.2a2.3 2.3 0 0 1 2.3 2.3v3.4a2.3 2.3 0 0 1-2.3 2.3M9 21h3"
+                />
               </svg>
             </div>
             <div>
@@ -699,7 +719,12 @@
               aria-label="Tổng quan"
               onclick="openPage('overview')"
             >
-              <span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 19h16M6 16l4-5 3 2 5-7"/><path d="M15 6h3v3"/></svg></span> <span>Tổng quan</span>
+              <span aria-hidden="true"
+                ><svg viewBox="0 0 24 24">
+                  <path d="M4 19h16M6 16l4-5 3 2 5-7" />
+                  <path d="M15 6h3v3" /></svg
+              ></span>
+              <span>Tổng quan</span>
             </button>
             <button
               id="menu-users"
@@ -708,7 +733,14 @@
               aria-label="Quản lý người dùng"
               onclick="openPage('users')"
             >
-              <span aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0M16 5.5a3 3 0 0 1 0 5.8M17 14a5 5 0 0 1 3.5 5"/></svg></span> <span>Quản lý người dùng</span>
+              <span aria-hidden="true"
+                ><svg viewBox="0 0 24 24">
+                  <circle cx="9" cy="8" r="3" />
+                  <path
+                    d="M3.5 19a5.5 5.5 0 0 1 11 0M16 5.5a3 3 0 0 1 0 5.8M17 14a5 5 0 0 1 3.5 5"
+                  /></svg
+              ></span>
+              <span>Quản lý người dùng</span>
             </button>
             <button
               id="menu-vehicles"
@@ -717,7 +749,12 @@
               aria-label="Quản lý phương tiện"
               onclick="openPage('vehicles')"
             >
-              <span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m5 11 1.5-4h11L19 11l2 2v5h-2v-2H5v2H3v-5z"/><path d="M6.5 11h11M6 14h.01M18 14h.01"/></svg></span> <span>Quản lý phương tiện</span>
+              <span aria-hidden="true"
+                ><svg viewBox="0 0 24 24">
+                  <path d="m5 11 1.5-4h11L19 11l2 2v5h-2v-2H5v2H3v-5z" />
+                  <path d="M6.5 11h11M6 14h.01M18 14h.01" /></svg
+              ></span>
+              <span>Quản lý phương tiện</span>
             </button>
             <button
               id="menu-stations"
@@ -726,7 +763,13 @@
               aria-label="Trạm sạc và cổng sạc"
               onclick="openPage('stations')"
             >
-              <span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 3v6M16 3v6M6 9h12v3a6 6 0 0 1-6 6v3M12 18v3"/></svg></span> <span>Trạm sạc &amp; cổng sạc</span>
+              <span aria-hidden="true"
+                ><svg viewBox="0 0 24 24">
+                  <path
+                    d="M8 3v6M16 3v6M6 9h12v3a6 6 0 0 1-6 6v3M12 18v3"
+                  /></svg
+              ></span>
+              <span>Trạm sạc &amp; cổng sạc</span>
             </button>
             <button
               id="menu-slots"
@@ -735,7 +778,12 @@
               aria-label="Bãi đỗ xe và chỗ đỗ"
               onclick="openPage('slots')"
             >
-              <span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 20V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v15M2 20h20"/><path d="M10 17V7h4a3 3 0 0 1 0 6h-4"/></svg></span> <span>Bãi đỗ xe &amp; chỗ đỗ</span>
+              <span aria-hidden="true"
+                ><svg viewBox="0 0 24 24">
+                  <path d="M4 20V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v15M2 20h20" />
+                  <path d="M10 17V7h4a3 3 0 0 1 0 6h-4" /></svg
+              ></span>
+              <span>Bãi đỗ xe &amp; chỗ đỗ</span>
             </button>
             <button
               id="menu-rates"
@@ -744,7 +792,14 @@
               aria-label="Biểu giá"
               onclick="openPage('rates')"
             >
-              <span aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M15 8.5c-.7-.7-1.6-1-3-1-1.5 0-2.5.8-2.5 2s1 1.8 2.5 2 2.5.7 2.5 2-1 2-2.5 2c-1.2 0-2.3-.4-3-1.2M12 5.5v13"/></svg></span> <span>Biểu giá</span>
+              <span aria-hidden="true"
+                ><svg viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="9" />
+                  <path
+                    d="M15 8.5c-.7-.7-1.6-1-3-1-1.5 0-2.5.8-2.5 2s1 1.8 2.5 2 2.5.7 2.5 2-1 2-2.5 2c-1.2 0-2.3-.4-3-1.2M12 5.5v13"
+                  /></svg
+              ></span>
+              <span>Biểu giá</span>
             </button>
             <button
               id="menu-reservations"
@@ -753,7 +808,12 @@
               aria-label="Đặt chỗ"
               onclick="openPage('reservations')"
             >
-              <span aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 10h16M8 14h3"/></svg></span> <span>Đặt chỗ</span>
+              <span aria-hidden="true"
+                ><svg viewBox="0 0 24 24">
+                  <rect x="4" y="5" width="16" height="15" rx="2" />
+                  <path d="M8 3v4M16 3v4M4 10h16M8 14h3" /></svg
+              ></span>
+              <span>Đặt chỗ</span>
             </button>
             <button
               id="menu-sessions"
@@ -762,7 +822,11 @@
               aria-label="Phiên sạc"
               onclick="openPage('sessions')"
             >
-              <span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m13 2-8 12h6l-1 8 9-13h-6z"/></svg></span> <span>Phiên sạc</span>
+              <span aria-hidden="true"
+                ><svg viewBox="0 0 24 24">
+                  <path d="m13 2-8 12h6l-1 8 9-13h-6z" /></svg
+              ></span>
+              <span>Phiên sạc</span>
             </button>
             <button
               id="menu-billing"
@@ -771,7 +835,12 @@
               aria-label="Thanh toán và phí"
               onclick="openPage('billing')"
             >
-              <span aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h3"/></svg></span> <span>Thanh toán &amp; phí</span>
+              <span aria-hidden="true"
+                ><svg viewBox="0 0 24 24">
+                  <rect x="3" y="5" width="18" height="14" rx="2" />
+                  <path d="M3 10h18M7 15h3" /></svg
+              ></span>
+              <span>Thanh toán &amp; phí</span>
             </button>
           </div>
         </div>
@@ -785,7 +854,14 @@
             Người dùng
           </div>
           <button onclick="handleLogout()" class="btn btn-secondary-dark w-100">
-            <svg class="sidebar-logout-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 17l5-5-5-5M15 12H3"/><path d="M12 3h7a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-7"/></svg>
+            <svg
+              class="sidebar-logout-icon"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path d="M10 17l5-5-5-5M15 12H3" />
+              <path d="M12 3h7a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-7" />
+            </svg>
             Đăng xuất
           </button>
         </div>
@@ -1581,9 +1657,6 @@
 
           <div class="sc-card">
             <h5 class="fw-bold mb-1">Bước 1 · Chọn xe và thời gian</h5>
-            <p class="mb-3" style="color: var(--text-muted)">
-                Có thể đặt qua nhiều khung giá; hệ thống tính từng khung và chỉ ẩn chỗ nếu thiếu giá ở một phần thời gian.
-            </p>
             <form
               class="row g-3 align-items-end"
               onsubmit="searchReservationSlots(event)"
@@ -1779,6 +1852,7 @@
               <table class="table-dark-custom">
                 <thead>
                   <tr>
+                    <th>Mã đặt chỗ</th>
                     <th>Mã phương tiện</th>
                     <th>Biển số xe</th>
                     <th>Bắt đầu sạc</th>
@@ -2006,6 +2080,7 @@
       let activePageKey = null;
       setInterval(() => {
         if (activePageKey === "reservations") loadReservations();
+        if (activePageKey === "overview") loadOverview();
       }, 15000);
       let pendingLocationDeleteId = null;
 
@@ -3070,8 +3145,8 @@
             <td>Ô ${s.position}</td>
             <td>${s.slot_type === "Charging" ? '<span class="pill-emerald">Chỗ có trụ sạc</span>' : '<span class="pill-slate">Chỗ không có trụ sạc</span>'}</td>
             <td>${s.slot_type === "Standard" ? "Không có trụ sạc" : s.charger_type ? `${escapeHtml(s.charger_type)} (${s.kw_rate} kW)` : "Chưa gắn trụ sạc"}</td>
-            <td>${translateStatus(s.status)}</td>
-            <td><div class="d-flex flex-wrap gap-1"><button type="button" class="btn btn-secondary-dark btn-sm" data-slot-action="edit" data-slot-id="${escapeHtml(s.slot_id)}" ${s.is_locked ? `disabled title="${escapeHtml(s.lock_reason)}"` : ""}>Sửa</button><button type="button" class="btn btn-danger btn-sm" data-slot-action="delete" data-slot-id="${escapeHtml(s.slot_id)}" ${s.is_locked ? `disabled title="${escapeHtml(s.lock_reason)}"` : ""}>Xóa</button>${s.status === "Available" ? `<button type="button" class="btn btn-secondary-dark btn-sm" data-slot-action="maintenance" data-slot-id="${escapeHtml(s.slot_id)}" ${s.is_locked ? `disabled title="${escapeHtml(s.lock_reason)}"` : ""}>Bảo trì</button>` : s.status === "Maintenance" ? `<button type="button" class="btn btn-emerald btn-sm" data-slot-action="available" data-slot-id="${escapeHtml(s.slot_id)}">Mở lại</button>` : ""}</div></td>
+            <td>${translateStatus(s.display_status || s.status)}</td>
+            <td><div class="d-flex flex-wrap gap-1"><button type="button" class="btn btn-secondary-dark btn-sm" data-slot-action="edit" data-slot-id="${escapeHtml(s.slot_id)}" ${s.is_locked ? `disabled title="${escapeHtml(s.lock_reason)}"` : ""}>Sửa</button><button type="button" class="btn btn-danger btn-sm" data-slot-action="delete" data-slot-id="${escapeHtml(s.slot_id)}" ${s.is_locked ? `disabled title="${escapeHtml(s.lock_reason)}"` : ""}>Xóa</button>${s.status === "Maintenance" ? `<button type="button" class="btn btn-emerald btn-sm" data-slot-action="available" data-slot-id="${escapeHtml(s.slot_id)}" ${s.is_locked ? `disabled title="${escapeHtml(s.lock_reason)}"` : ""}>Mở lại</button>` : `<button type="button" class="btn btn-secondary-dark btn-sm" data-slot-action="maintenance" data-slot-id="${escapeHtml(s.slot_id)}" ${s.status !== "Available" || s.is_locked ? `disabled title="${escapeHtml(s.lock_reason || "Chỉ có thể đưa chỗ đang trống vào bảo trì.")}"` : ""}>Bảo trì</button>`}</div></td>
         </tr>
     `,
             )
@@ -3395,7 +3470,7 @@
             <td>${
               r.vehicle_departed_at
                 ? '<span class="pill-emerald">Đã rời chỗ</span>'
-                : `<button type="button" class="btn btn-secondary-dark btn-sm" data-reservation-depart="${escapeHtml(r.reservation_id)}" ${Date.now() < Date.parse(r.start_time) ? "disabled title=\"Khả dụng từ giờ bắt đầu đặt chỗ\"" : ""}>Đã rời chỗ</button>`
+                : `<button type="button" class="btn btn-secondary-dark btn-sm" data-reservation-depart="${escapeHtml(r.reservation_id)}" ${Date.now() < Date.parse(r.start_time) ? 'disabled title="Khả dụng từ giờ bắt đầu đặt chỗ"' : ""}>Đã rời chỗ</button>`
             }</td>
         </tr>
     `,
@@ -3418,7 +3493,20 @@
         );
         const data = await resp.json();
         showNotice(data.message, !resp.ok);
-        if (resp.ok) await loadReservations();
+        if (resp.ok) {
+          await loadReservations();
+          const searchResults = document.getElementById(
+            "reservationSearchResults",
+          );
+          if (
+            searchResults &&
+            !searchResults.classList.contains("d-none") &&
+            document.getElementById("r_start").value &&
+            document.getElementById("r_end").value
+          ) {
+            await searchReservationSlots({ preventDefault() {} });
+          }
+        }
       }
 
       async function handleCreateReservation() {
@@ -3476,19 +3564,20 @@
             .map(
               (s) => `
         <tr>
+            <td class="fw-bold">${escapeHtml(s.reservation_id || "—")}</td>
             <td class="fw-bold">${escapeHtml(s.vehicle_id)}</td>
             <td class="fw-bold">${escapeHtml(s.plate_number)}</td>
             <td>${formatDateTimeVI(s.start_date_time)}</td>
             <td>${formatDateTimeVI(s.end_date_time)}</td>
-            <td>${s.energy_consumed_kwh == null ? "—" : `<span class="pill-emerald">${s.energy_consumed_kwh} kWh (ước tính)</span>`}</td>
-            <td>${formatVND(s.rate_per_kwh)}</td>
-            <td class="fw-bold emerald-text">${s.charging_cost == null ? "—" : formatVND(s.charging_cost)}</td>
-            <td><span class="pill-amber">Chờ thanh toán</span></td>
+            <td>${s.no_charging_session ? '<span class="pill-slate">0 kWh · Chưa sạc</span>' : s.energy_consumed_kwh == null ? "—" : `<span class="pill-emerald">${s.energy_consumed_kwh} kWh (ước tính)</span>`}</td>
+            <td>${s.no_charging_session ? "—" : formatVND(s.rate_per_kwh)}</td>
+            <td class="fw-bold emerald-text">${formatVND(s.charging_cost || 0)}</td>
+            <td><span class="pill-amber">${s.no_charging_session && !s.vehicle_departed_at ? "Chờ rời chỗ" : "Chờ thanh toán"}</span></td>
         </tr>
     `,
             )
             .join("") ||
-          '<tr><td colspan="8" class="text-center" style="color:var(--text-muted);">Chưa có phiên sạc chờ thanh toán.</td></tr>';
+          '<tr><td colspan="9" class="text-center" style="color:var(--text-muted);">Chưa có phiên sạc chờ thanh toán.</td></tr>';
         document
           .querySelectorAll(
             '#activeSessionsTableBody [data-session-action="finish"]',
@@ -3577,7 +3666,7 @@
         );
         document
           .getElementById("payChargingWrap")
-          .classList.toggle("d-none", Number(item.charging_cost) <= 0);
+          .classList.toggle("d-none", item.slot_type !== "Charging");
         document
           .getElementById("payViolationWrap")
           .classList.toggle("d-none", Number(item.violation_cost) <= 0);
@@ -3647,6 +3736,16 @@
           enterApp();
         }
       };
+
+      window.setInterval(() => {
+        if (
+          activePageKey === "slots" &&
+          currentUser?.role === "system_admin" &&
+          !document.hidden
+        ) {
+          loadSlots();
+        }
+      }, 30000);
     </script>
   </body>
 </html>

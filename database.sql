@@ -42,6 +42,7 @@ CREATE TABLE IF NOT EXISTS parking_rates (
     CONSTRAINT chk_parking_price_positive CHECK (price_per_hour > 0),
     CONSTRAINT chk_parking_service_type CHECK (service_type IN ('parking', 'both'))
 );
+
 -- 4. Bảng charging_rates
 CREATE TABLE IF NOT EXISTS charging_rates (
     rate_id VARCHAR(20) PRIMARY KEY,
@@ -103,7 +104,7 @@ CREATE TABLE IF NOT EXISTS reservations (
     reservation_id VARCHAR(50) PRIMARY KEY,
     vehicle_id VARCHAR(20) NOT NULL,
     slot_id VARCHAR(20) NOT NULL,
-    rate_id VARCHAR(20) NOT NULL,
+    rate_id VARCHAR(20),
     start_time TIMESTAMPTZ NOT NULL,
     end_time TIMESTAMPTZ NOT NULL,
     total_amount DECIMAL(10, 2) DEFAULT 0.00,
@@ -114,18 +115,17 @@ CREATE TABLE IF NOT EXISTS reservations (
     CONSTRAINT fk_reservations_slot FOREIGN KEY (slot_id)
         REFERENCES slots(slot_id) ON DELETE RESTRICT ON UPDATE CASCADE,
     CONSTRAINT fk_reservations_rate FOREIGN KEY (rate_id)
-        REFERENCES parking_rates(rate_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+        REFERENCES parking_rates(rate_id) ON DELETE SET NULL ON UPDATE CASCADE,
     CONSTRAINT chk_reservation_time CHECK (end_time > start_time),
     CONSTRAINT chk_reservation_payment_status CHECK (payment_status IN ('Pending', 'Paid', 'Failed', 'Refunded'))
 );
-
 
 -- 10. Bảng charging_sessions (energy_consumed_kwh do hệ thống tự động tính và ghi)
 CREATE TABLE IF NOT EXISTS charging_sessions (
     session_id VARCHAR(30) PRIMARY KEY,
     vehicle_id VARCHAR(20) NOT NULL,
     charging_station_id VARCHAR(20) NOT NULL,
-    rate_id VARCHAR(20) NOT NULL,
+    rate_id VARCHAR(20),
     start_date_time TIMESTAMPTZ NOT NULL,
     end_date_time TIMESTAMPTZ,
     energy_consumed_kwh DECIMAL(8, 2),
@@ -137,7 +137,7 @@ CREATE TABLE IF NOT EXISTS charging_sessions (
     CONSTRAINT fk_sessions_station FOREIGN KEY (charging_station_id)
         REFERENCES charging_stations(station_id) ON DELETE RESTRICT ON UPDATE CASCADE,
     CONSTRAINT fk_sessions_rate FOREIGN KEY (rate_id)
-        REFERENCES charging_rates(rate_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+        REFERENCES charging_rates(rate_id) ON DELETE SET NULL ON UPDATE CASCADE,
     CONSTRAINT chk_session_time CHECK (end_date_time IS NULL OR end_date_time > start_date_time),
     CONSTRAINT chk_energy_positive CHECK (energy_consumed_kwh IS NULL OR energy_consumed_kwh > 0),
     CONSTRAINT chk_session_status CHECK (session_status IN ('Charging', 'Completed')),
@@ -172,6 +172,15 @@ CREATE TABLE IF NOT EXISTS payments (
     CONSTRAINT fk_payments_reservation FOREIGN KEY (reservation_id)
         REFERENCES reservations(reservation_id) ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT chk_payment_status CHECK (payment_status IN ('Completed', 'Pending', 'Failed', 'Refunded'))
+);
+
+-- 13. Bảng payment_items
+CREATE TABLE IF NOT EXISTS payment_items (
+    payment_item_id VARCHAR(50) PRIMARY KEY,
+    payment_id VARCHAR(30) NOT NULL REFERENCES payments(payment_id) ON DELETE CASCADE ON UPDATE CASCADE,
+    item_type VARCHAR(20) NOT NULL CHECK (item_type IN ('parking', 'charging', 'violation')),
+    amount DECIMAL(12, 2) NOT NULL,
+    CONSTRAINT uq_payment_items_payment_type UNIQUE (payment_id, item_type)
 );
 
 -- ============================================================================

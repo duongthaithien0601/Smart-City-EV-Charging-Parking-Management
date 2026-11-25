@@ -81,7 +81,6 @@ DB_CONFIG = {
     "password": os.environ.get("DB_PASSWORD", "123456"),
 }
 
-
 def get_db_connection():
     return psycopg2.connect(**DB_CONFIG, cursor_factory=RealDictCursor)
 
@@ -135,11 +134,12 @@ def slot_lock_reason(cur, slot_id: str):
         SELECT EXISTS (
             SELECT 1 FROM reservations
             WHERE slot_id=%s AND payment_status IN ('Pending', 'Paid')
-              AND end_time > NOW() AND vehicle_departed_at IS NULL
+              AND vehicle_departed_at IS NULL
         ) OR EXISTS (
             SELECT 1 FROM charging_sessions ss
             JOIN charging_stations st ON st.station_id=ss.charging_station_id
-            WHERE st.slot_id=%s AND ss.session_status='Charging'
+            WHERE st.slot_id=%s AND ss.session_status IN ('Charging', 'Completed')
+              AND ss.vehicle_departed_at IS NULL
         ) AS is_locked;
     """, (slot_id, slot_id))
     return "Vị trí đang có lịch đặt hoặc phiên sạc." if cur.fetchone()["is_locked"] else None
@@ -149,25 +149,31 @@ def location_lock_reason(cur, location_id: str):
     cur.execute("""
         SELECT EXISTS (
             SELECT 1 FROM slots s
-            WHERE s.location_id=%s AND s.status='Occupied'
-        ) AS has_occupied_slot,
+            WHERE s.location_id=%s AND s.status <> 'Available'
+        ) AS has_unavailable_slot,
         EXISTS (
             SELECT 1 FROM reservations r JOIN slots s ON s.slot_id=r.slot_id
             WHERE s.location_id=%s AND r.payment_status IN ('Pending', 'Paid')
-              AND r.end_time > NOW() AND r.vehicle_departed_at IS NULL
-        ) AS has_active_reservation,
+              AND r.vehicle_departed_at IS NULL
+        ) AS has_undeparted_reservation,
+        EXISTS (
+            SELECT 1 FROM reservations r JOIN slots s ON s.slot_id=r.slot_id
+            WHERE s.location_id=%s AND r.payment_status='Pending'
+        ) AS has_pending_payment,
         EXISTS (
             SELECT 1 FROM charging_sessions ss
             JOIN charging_stations st ON st.station_id=ss.charging_station_id
             JOIN slots s ON s.slot_id=st.slot_id
             WHERE s.location_id=%s AND ss.session_status='Charging'
         ) AS has_active_session;
-    """, (location_id, location_id, location_id))
+    """, (location_id, location_id, location_id, location_id))
     state = cur.fetchone()
-    if state["has_occupied_slot"]:
-        return "Bãi có vị trí đang có xe."
-    if state["has_active_reservation"]:
-        return "Bãi có vị trí đang có lịch đặt chưa kết thúc."
+    if state["has_unavailable_slot"]:
+        return "Tất cả vị trí trong bãi phải ở trạng thái còn trống."
+    if state["has_pending_payment"]:
+        return "Bãi còn mã đặt chỗ đang chờ thanh toán."
+    if state["has_undeparted_reservation"]:
+        return "Bãi còn lịch đặt chưa xác nhận rời chỗ."
     if state["has_active_session"]:
         return "Bãi có phiên sạc đang hoạt động."
     return None
@@ -257,6 +263,16 @@ def latest_rates(cur, table: str, location_id=None, service_type=None):
     return cur.fetchall()
 
 
+def latest_violation_rate(cur, location_id):
+    cur.execute("""
+        SELECT amount FROM violation_rates
+        WHERE location_id=%s
+        ORDER BY created_at DESC, rate_id DESC
+        LIMIT 1;
+    """, (location_id,))
+    return cur.fetchone()
+
+
 def intervals_overlap(start_a, end_a, start_b, end_b) -> bool:
     def split(start, end):
         midnight = datetime.min.time()
@@ -286,10 +302,16 @@ def parse_rate_payload(data):
 
 def ensure_rate_interval_available(cur, kind, rate_type, start, end, location_id, service_type=None, exclude_rate_ids=()):
     table = "parking_rates" if kind == "parking" else "charging_rates"
-    for existing in latest_rates(cur, table, location_id, service_type):
+    if table == "parking_rates":
+        # Each parking_rates service_type has its own schedule. A parking-only
+        # rate must not block a combined parking-and-charging rate, or vice versa.
+        existing_rates = latest_rates(cur, table, location_id, service_type or "parking")
+    else:
+        existing_rates = latest_rates(cur, table, location_id)
+    for existing in existing_rates:
         if existing["rate_id"] in exclude_rate_ids:
             continue
-        if existing["rate_type"] != rate_type and intervals_overlap(start, end, existing["effective_from"], existing["effective_to"]):
+        if intervals_overlap(start, end, existing["effective_from"], existing["effective_to"]):
             raise ValueError(f"Khung giờ bị trùng với mức giá {existing['rate_type']} ({existing['effective_from']}–{existing['effective_to']}).")
 
 
@@ -456,10 +478,19 @@ def api_overview():
                 total_locations = cur.fetchone()["total_locations"]
                 cur.execute("""
                     SELECT COUNT(*) AS total_slots,
-                           COUNT(*) FILTER (WHERE status = 'Available') AS available_slots,
-                           COUNT(*) FILTER (WHERE slot_type = 'Charging') AS charging_slots,
-                           COUNT(*) FILTER (WHERE slot_type = 'Standard') AS standard_slots
-                    FROM slots;
+                           COUNT(*) FILTER (
+                               WHERE s.status = 'Available'
+                                 AND NOT EXISTS (
+                                     SELECT 1 FROM reservations r
+                                     WHERE r.slot_id=s.slot_id
+                                       AND r.payment_status IN ('Pending', 'Paid')
+                                       AND r.vehicle_departed_at IS NULL
+                                       AND r.start_time <= CURRENT_TIMESTAMP
+                                 )
+                           ) AS available_slots,
+                           COUNT(*) FILTER (WHERE s.slot_type = 'Charging') AS charging_slots,
+                           COUNT(*) FILTER (WHERE s.slot_type = 'Standard') AS standard_slots
+                    FROM slots s;
                 """)
                 parking = cur.fetchone()
                 cur.execute("""
@@ -471,29 +502,24 @@ def api_overview():
                 """)
                 charging = cur.fetchone()
                 cur.execute("""
-                    WITH charging_totals AS (
-                        SELECT ss.reservation_id,
-                               SUM(ROUND(ss.energy_consumed_kwh * cr.rate_per_kwh, 0)) AS amount
-                        FROM charging_sessions ss
-                        JOIN charging_rates cr ON cr.rate_id=ss.rate_id
-                        WHERE ss.session_status='Completed'
-                        GROUP BY ss.reservation_id
-                    ), fee_totals AS (
-                        SELECT reservation_id, SUM(amount) AS amount
-                        FROM fees
-                        GROUP BY reservation_id
+                    WITH item_totals AS (
+                        SELECT payment_id,
+                               SUM(amount) FILTER (WHERE item_type='parking') AS parking_amount,
+                               SUM(amount) FILTER (WHERE item_type='charging') AS charging_amount,
+                               SUM(amount) FILTER (WHERE item_type='violation') AS violation_amount
+                        FROM payment_items
+                        GROUP BY payment_id
                     )
                     SELECT COALESCE(SUM(CASE WHEN s.slot_type='Standard'
-                                             THEN r.total_amount ELSE 0 END), 0) AS parking_revenue,
+                                             THEN COALESCE(it.parking_amount, 0) ELSE 0 END), 0) AS parking_revenue,
                            COALESCE(SUM(CASE WHEN s.slot_type='Charging'
-                                             THEN r.total_amount + COALESCE(ct.amount, 0) ELSE 0 END), 0) AS parking_charging_revenue,
-                           COALESCE(SUM(COALESCE(ft.amount, 0)), 0) AS violation_revenue,
+                                             THEN COALESCE(it.parking_amount, 0) + COALESCE(it.charging_amount, 0) ELSE 0 END), 0) AS parking_charging_revenue,
+                           COALESCE(SUM(COALESCE(it.violation_amount, 0)), 0) AS violation_revenue,
                            COALESCE(SUM(p.amount), 0) AS total_revenue
                     FROM payments p
                     JOIN reservations r ON r.reservation_id=p.reservation_id
                     JOIN slots s ON s.slot_id=r.slot_id
-                    LEFT JOIN charging_totals ct ON ct.reservation_id=r.reservation_id
-                    LEFT JOIN fee_totals ft ON ft.reservation_id=r.reservation_id
+                    LEFT JOIN item_totals it ON it.payment_id=p.payment_id
                     WHERE p.payment_status='Completed' AND r.payment_status='Paid';
                 """)
                 revenue = cur.fetchone()
@@ -734,7 +760,7 @@ def api_location_detail(location_id):
                         cur.execute("""
                             SELECT EXISTS (
                                 SELECT 1 FROM reservations r JOIN slots s ON s.slot_id = r.slot_id
-                                WHERE s.location_id = %s AND r.payment_status IN ('Pending', 'Paid') AND r.end_time > NOW()
+                                WHERE s.location_id = %s AND r.payment_status IN ('Pending', 'Paid') AND r.vehicle_departed_at IS NULL
                             ) OR EXISTS (
                                 SELECT 1 FROM charging_sessions ss
                                 JOIN charging_stations st ON st.station_id = ss.charging_station_id
@@ -904,6 +930,25 @@ def api_slots():
     sql = """
         SELECT s.slot_id, s.location_id, pl.location_name, pl.address,
                s.position, s.slot_type, s.status,
+               CASE
+                   WHEN s.status IN ('Maintenance', 'Occupied') THEN s.status
+                   WHEN EXISTS (
+                       SELECT 1 FROM reservations r
+                       WHERE r.slot_id=s.slot_id
+                         AND r.payment_status IN ('Pending', 'Paid')
+                         AND r.vehicle_departed_at IS NULL
+                         AND r.start_time <= CURRENT_TIMESTAMP
+                   ) THEN 'Occupied'
+                   WHEN EXISTS (
+                       SELECT 1 FROM reservations r
+                       WHERE r.slot_id=s.slot_id
+                         AND r.payment_status IN ('Pending', 'Paid')
+                         AND r.vehicle_departed_at IS NULL
+                         AND r.start_time > CURRENT_TIMESTAMP
+                         AND r.end_time > CURRENT_TIMESTAMP
+                   ) THEN 'Reserved'
+                   ELSE s.status
+               END AS display_status,
                cs.charger_type, cs.kw_rate, st.station_id
         FROM slots s
         JOIN parking_locations pl ON s.location_id = pl.location_id
@@ -911,7 +956,15 @@ def api_slots():
         LEFT JOIN charging_stations st ON cs.slot_id = st.slot_id
         WHERE (%s IS NULL OR %s = '' OR s.location_id = %s)
           AND pl.status = 'Active'
-          AND (%s = FALSE OR s.status = 'Available')
+          AND (%s = FALSE OR (
+              s.status = 'Available'
+              AND NOT EXISTS (
+                  SELECT 1 FROM reservations r
+                  WHERE r.slot_id=s.slot_id
+                    AND r.payment_status IN ('Pending', 'Paid')
+                    AND r.vehicle_departed_at IS NULL
+              )
+          ))
           AND (%s IS NULL OR %s = '' OR s.slot_type = %s)
           AND (
               %s = FALSE OR (
@@ -924,22 +977,17 @@ def api_slots():
                               SELECT 1 FROM reservations r
                               WHERE r.slot_id = s.slot_id
                                 AND r.payment_status IN ('Pending', 'Paid')
-                                AND r.start_time < %s AND r.end_time > %s
+                                AND r.vehicle_departed_at IS NULL
+                                AND (
+                                    r.start_time <= CURRENT_TIMESTAMP
+                                    OR (r.start_time < %s AND r.end_time > %s)
+                                )
                           )
                           AND NOT EXISTS (
                               SELECT 1 FROM charging_sessions ss
                               WHERE ss.charging_station_id = st.station_id
-                                AND ss.start_date_time < %s
-                                AND COALESCE(
-                                    ss.vehicle_departed_at,
-                                    CASE WHEN ss.session_status = 'Completed'
-                                         THEN GREATEST(
-                                             ss.end_date_time,
-                                             COALESCE((SELECT r.end_time FROM reservations r WHERE r.reservation_id=ss.reservation_id), ss.end_date_time)
-                                         ) + INTERVAL '15 minutes'
-                                         ELSE 'infinity'::timestamptz END
-                                ) > %s
-                                AND (ss.session_status = 'Charging' OR ss.vehicle_departed_at IS NULL)
+                                AND ss.vehicle_departed_at IS NULL
+                                AND ss.session_status IN ('Charging', 'Completed')
                           )
                       )
                   )
@@ -953,8 +1001,7 @@ def api_slots():
                 cur.execute(sql, (
                     location_id, location_id, location_id, admin_only_available,
                     slot_type, slot_type, slot_type,
-                    only_available, has_window, has_window,
-                    end_dt, start_dt, end_dt, start_dt
+                    only_available, has_window, has_window, end_dt, start_dt,
                 ))
                 rows = cur.fetchall()
                 for row in rows:
@@ -976,8 +1023,7 @@ def api_slots():
                             continue
                         violation_estimate = 0
                         if vehicle_type == "ICE" and row["slot_type"] == "Charging":
-                            cur.execute("SELECT amount FROM violation_rates WHERE location_id = %s ORDER BY created_at DESC, rate_id DESC LIMIT 1;", (location_key,))
-                            violation = cur.fetchone()
+                            violation = latest_violation_rate(cur, location_key)
                             violation_estimate = float(violation["amount"]) if violation else 0
                         row["estimated_parking_fee"] = parking_estimate
                         row["estimated_total"] = parking_estimate
@@ -1111,7 +1157,7 @@ def api_update_slot_status(slot_id):
                     return jsonify({"status": "error", "message": "Không thể đưa chỗ đang có xe hoặc được giữ vào bảo trì."}), 409
                 if new_status == "Maintenance":
                     cur.execute("""
-                        SELECT EXISTS (SELECT 1 FROM reservations WHERE slot_id = %s AND payment_status IN ('Pending', 'Paid') AND end_time > NOW())
+                        SELECT EXISTS (SELECT 1 FROM reservations WHERE slot_id = %s AND payment_status IN ('Pending', 'Paid') AND vehicle_departed_at IS NULL)
                             OR EXISTS (
                                 SELECT 1 FROM charging_sessions ss
                                 JOIN charging_stations st ON st.station_id = ss.charging_station_id
@@ -1211,11 +1257,15 @@ def api_reservations():
                 cur.execute("""
                     SELECT 1 FROM reservations
                     WHERE slot_id = %s AND payment_status IN ('Pending', 'Paid')
-                      AND start_time < %s AND end_time > %s
+                      AND vehicle_departed_at IS NULL
+                      AND (
+                          start_time <= CURRENT_TIMESTAMP
+                          OR (start_time < %s AND end_time > %s)
+                      )
                     LIMIT 1;
                 """, (slot_id, end_dt, start_dt))
                 if cur.fetchone():
-                    return jsonify({"status": "error", "message": "Chỗ đỗ vừa được người khác đặt trong khoảng thời gian này. Hãy tìm lại chỗ."}), 409
+                    return jsonify({"status": "error", "message": "Vị trí này đã có lượt đặt chưa xác nhận rời chỗ. Chỉ có thể dùng lại sau khi người dùng bấm 'Đã rời chỗ'."}), 409
 
                 service_type = "both" if slot_row["slot_type"] == "Charging" else "parking"
                 rates_list = latest_rates(cur, "parking_rates", slot_row["location_id"], service_type)
@@ -1286,8 +1336,7 @@ def api_depart_reservation(reservation_id):
                 late_minutes = math.ceil(late_seconds / 60) if late_seconds else 0
                 violation_amount = 0.0
                 if late_minutes > 0:
-                    cur.execute("SELECT amount FROM violation_rates WHERE location_id=%s ORDER BY created_at DESC, rate_id DESC LIMIT 1;", (reservation["location_id"],))
-                    rate = cur.fetchone()
+                    rate = latest_violation_rate(cur, reservation["location_id"])
                     if not rate:
                         return jsonify({"status": "error", "message": "Bãi đỗ chưa được cấu hình phí vi phạm; chưa thể hoàn tất xác nhận rời chỗ."}), 409
                     violation_amount = float(rate["amount"])
@@ -1320,34 +1369,49 @@ def api_sessions():
         with get_db_connection() as conn:
             with conn.cursor() as cur:
                 if request.method == "GET":
-                    if user["role"] == "customer":
-                        cur.execute("""
-                            SELECT ss.*, v.plate_number, cr.rate_type, cr.rate_per_kwh,
-                                   v.vehicle_id, r.payment_status,
-                                   ROUND(ss.energy_consumed_kwh * cr.rate_per_kwh, 0) AS charging_cost
-                            FROM charging_sessions ss
-                            JOIN vehicles v ON ss.vehicle_id = v.vehicle_id
-                            JOIN charging_rates cr ON ss.rate_id = cr.rate_id
-                            JOIN reservations r ON ss.reservation_id = r.reservation_id
-                            WHERE v.user_id = %s AND (
-                                ss.session_status = 'Charging'
-                                OR (ss.session_status = 'Completed' AND r.payment_status = 'Pending')
-                            )
-                            ORDER BY ss.start_date_time DESC;
-                        """, (user["user_id"],))
-                    else:
-                        cur.execute("""
-                            SELECT ss.*, v.plate_number, cr.rate_type, cr.rate_per_kwh,
-                                   v.vehicle_id, r.payment_status,
-                                   ROUND(ss.energy_consumed_kwh * cr.rate_per_kwh, 0) AS charging_cost
-                            FROM charging_sessions ss
-                            JOIN vehicles v ON ss.vehicle_id = v.vehicle_id
-                            JOIN charging_rates cr ON ss.rate_id = cr.rate_id
-                            JOIN reservations r ON ss.reservation_id = r.reservation_id
-                            WHERE ss.session_status = 'Charging'
-                               OR (ss.session_status = 'Completed' AND r.payment_status = 'Pending')
-                            ORDER BY ss.start_date_time DESC;
-                        """)
+                    owner_id = user["user_id"] if user["role"] == "customer" else None
+                    cur.execute("""
+                        SELECT ss.session_id, ss.vehicle_id, ss.charging_station_id, ss.rate_id,
+                               ss.start_date_time, ss.end_date_time, ss.energy_consumed_kwh,
+                               ss.session_status, ss.reservation_id, ss.vehicle_departed_at,
+                               v.plate_number, cr.rate_type, cr.rate_per_kwh, r.payment_status,
+                               ROUND(ss.energy_consumed_kwh * cr.rate_per_kwh, 0) AS charging_cost,
+                               FALSE AS no_charging_session
+                        FROM charging_sessions ss
+                        JOIN vehicles v ON ss.vehicle_id = v.vehicle_id
+                        JOIN charging_rates cr ON ss.rate_id = cr.rate_id
+                        JOIN reservations r ON ss.reservation_id = r.reservation_id
+                        WHERE (ss.session_status = 'Charging'
+                               OR (ss.session_status = 'Completed' AND r.payment_status = 'Pending'))
+                          AND (%s IS NULL OR v.user_id = %s)
+
+                        UNION ALL
+
+                        SELECT NULL::VARCHAR(30) AS session_id, v.vehicle_id,
+                               NULL::VARCHAR(20) AS charging_station_id,
+                               NULL::VARCHAR(20) AS rate_id,
+                               r.start_time AS start_date_time, r.end_time AS end_date_time,
+                               0::DECIMAL(8,2) AS energy_consumed_kwh,
+                               'Completed'::VARCHAR(20) AS session_status,
+                               r.reservation_id, r.vehicle_departed_at,
+                               v.plate_number, NULL::VARCHAR(20) AS rate_type,
+                               0::DECIMAL(10,2) AS rate_per_kwh, r.payment_status,
+                               0::NUMERIC AS charging_cost,
+                               TRUE AS no_charging_session
+                        FROM reservations r
+                        JOIN vehicles v ON r.vehicle_id = v.vehicle_id
+                        JOIN slots s ON r.slot_id = s.slot_id
+                        WHERE v.vehicle_type = 'EV'
+                          AND s.slot_type = 'Charging'
+                          AND r.payment_status = 'Pending'
+                          AND r.end_time <= CURRENT_TIMESTAMP
+                          AND (%s IS NULL OR v.user_id = %s)
+                          AND NOT EXISTS (
+                              SELECT 1 FROM charging_sessions ss
+                              WHERE ss.reservation_id = r.reservation_id
+                          )
+                        ORDER BY start_date_time DESC;
+                    """, (owner_id, owner_id, owner_id, owner_id))
                     return jsonify({"status": "success", "data": cur.fetchall()}), 200
 
                 data = request.get_json(force=True)
@@ -1490,9 +1554,9 @@ def api_billing():
         with get_db_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute("""
-                    SELECT r.reservation_id, r.vehicle_id, r.slot_id, r.start_time,
-                           r.end_time, r.total_amount AS parking_cost, r.vehicle_departed_at, s.slot_type,
-                           s.position, pl.location_name, v.plate_number, v.vehicle_type
+                    SELECT r.reservation_id, r.vehicle_id, r.slot_id, s.slot_type, r.start_time,
+                           r.end_time, r.total_amount AS parking_cost, r.vehicle_departed_at,
+                           s.position, pl.location_name, v.plate_number
                     FROM reservations r
                     JOIN vehicles v ON v.vehicle_id=r.vehicle_id
                     JOIN slots s ON s.slot_id=r.slot_id
@@ -1504,17 +1568,12 @@ def api_billing():
                 payable = []
                 for reservation in cur.fetchall():
                     cur.execute("""
-                        SELECT COALESCE(SUM(ROUND(ss.energy_consumed_kwh * cr.rate_per_kwh, 0)), 0) AS amount,
-                               COUNT(*) AS completed_sessions
+                        SELECT COALESCE(SUM(ROUND(ss.energy_consumed_kwh * cr.rate_per_kwh, 0)), 0) AS amount
                         FROM charging_sessions ss
                         JOIN charging_rates cr ON cr.rate_id=ss.rate_id
                         WHERE ss.reservation_id=%s AND ss.session_status='Completed';
                     """, (reservation["reservation_id"],))
                     charging = cur.fetchone()
-                    if (reservation["slot_type"] == "Charging"
-                            and reservation["vehicle_type"] == "EV"
-                            and charging["completed_sessions"] == 0):
-                        continue
                     cur.execute("SELECT COALESCE(SUM(amount), 0) AS amount FROM fees WHERE reservation_id=%s;", (reservation["reservation_id"],))
                     violation = cur.fetchone()
                     reservation["charging_cost"] = float(charging["amount"] or 0)
@@ -1540,9 +1599,9 @@ def api_pay():
         with get_db_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute("""
-                    SELECT r.reservation_id, r.total_amount AS parking_cost, r.slot_id,
+                    SELECT r.reservation_id, r.total_amount AS parking_cost,
                            r.start_time, r.end_time, r.vehicle_departed_at, r.payment_status,
-                           v.user_id, s.slot_type, v.vehicle_type
+                           v.user_id, s.slot_type
                     FROM reservations r
                     JOIN vehicles v ON r.vehicle_id = v.vehicle_id
                     JOIN slots s ON s.slot_id=r.slot_id
@@ -1562,23 +1621,41 @@ def api_pay():
                     return jsonify({"status": "error", "message": "Hãy xác nhận đã rời chỗ trước khi thanh toán."}), 409
                 if res["start_time"] > datetime.now(APP_TIMEZONE):
                     return jsonify({"status": "error", "message": "Chưa đến giờ bắt đầu đặt chỗ nên chưa thể thanh toán."}), 409
-                cur.execute("SELECT COALESCE(SUM(ROUND(ss.energy_consumed_kwh * cr.rate_per_kwh, 0)), 0) AS amount, COUNT(*) AS completed_sessions FROM charging_sessions ss JOIN charging_rates cr ON cr.rate_id=ss.rate_id WHERE ss.reservation_id=%s AND ss.session_status='Completed';", (res_id,))
-                charging = cur.fetchone()
-                if (res["slot_type"] == "Charging"
-                        and res["vehicle_type"] == "EV"
-                        and charging["completed_sessions"] == 0):
-                    return jsonify({"status": "error", "message": "Mã đặt chỗ có sạc điện chỉ được thanh toán sau khi kết thúc phiên sạc."}), 409
-                cur.execute("SELECT COALESCE(SUM(amount), 0) AS amount FROM fees WHERE reservation_id=%s;", (res_id,))
-                violation = cur.fetchone()
+                cur.execute("""
+                    SELECT ss.session_id, ss.energy_consumed_kwh, cr.rate_per_kwh,
+                           ROUND(ss.energy_consumed_kwh * cr.rate_per_kwh, 0) AS amount
+                    FROM charging_sessions ss
+                    JOIN charging_rates cr ON cr.rate_id=ss.rate_id
+                    WHERE ss.reservation_id=%s AND ss.session_status='Completed'
+                    ORDER BY ss.start_date_time;
+                """, (res_id,))
+                charging_items = cur.fetchall()
+                cur.execute("SELECT fee_id, fee_type, amount, excess_duration FROM fees WHERE reservation_id=%s ORDER BY fee_id;", (res_id,))
+                fee_items = cur.fetchall()
                 parking_cost = float(res["parking_cost"] or 0)
-                charging_cost = float(charging["amount"] or 0)
-                violation_cost = float(violation["amount"] or 0)
+                charging_cost = sum(float(item["amount"] or 0) for item in charging_items)
+                violation_cost = sum(float(item["amount"] or 0) for item in fee_items)
                 total_cost = parking_cost + charging_cost + violation_cost
 
                 cur.execute("""
                     INSERT INTO payments (payment_id, reservation_id, amount, payment_method, payment_status)
                     VALUES (%s, %s, %s, %s, 'Completed');
                 """, (pay_id, res_id, total_cost, encrypted_method))
+
+                def add_payment_item(item_type, amount):
+                    cur.execute("""
+                        INSERT INTO payment_items
+                            (payment_item_id, payment_id, item_type, amount)
+                        VALUES (%s, %s, %s, %s);
+                    """, (
+                        "ITEM" + uuid.uuid4().hex[:24].upper(), pay_id, item_type, amount,
+                    ))
+
+                add_payment_item("parking", parking_cost)
+                if charging_cost > 0:
+                    add_payment_item("charging", charging_cost)
+                if violation_cost > 0:
+                    add_payment_item("violation", violation_cost)
 
                 cur.execute("UPDATE reservations SET payment_status = 'Paid' WHERE reservation_id = %s;", (res_id,))
             conn.commit()
@@ -1711,21 +1788,10 @@ def api_rate_detail(rate_id):
                     if found_kind == "parking" and old_rate.get("service_type") == "both":
                         cur.execute("SELECT * FROM charging_rates WHERE location_id=%s AND rate_type=%s AND effective_from=%s AND effective_to=%s ORDER BY COALESCE(NULLIF(substring(rate_id from '[0-9]+$'), ''), '0')::BIGINT DESC LIMIT 1 FOR UPDATE;", (old_rate["location_id"], old_rate["rate_type"], old_rate["effective_from"], old_rate["effective_to"]))
                         paired_charging = cur.fetchone()
-                    if found_kind == "violation":
-                        cur.execute("SELECT EXISTS (SELECT 1 FROM fees WHERE fee_type='Violation' AND reservation_id IN (SELECT reservation_id FROM reservations)) AS is_used;")
-                    else:
-                        reference_table = "reservations" if found_kind == "parking" else "charging_sessions"
-                        cur.execute(f"SELECT EXISTS (SELECT 1 FROM {reference_table} WHERE rate_id = %s) AS is_used;", (rate_id,))
-                    used = cur.fetchone()["is_used"]
-                    if paired_charging:
-                        cur.execute("SELECT EXISTS (SELECT 1 FROM charging_sessions WHERE rate_id=%s) AS is_used;", (paired_charging["rate_id"],))
-                        used = used or cur.fetchone()["is_used"]
-                    if used:
-                        return jsonify({"status": "error", "message": "Mức giá đã được dùng trong giao dịch nên không thể xóa để giữ lịch sử."}), 409
                     if paired_charging:
                         cur.execute("DELETE FROM charging_rates WHERE rate_id=%s;", (paired_charging["rate_id"],))
                     cur.execute(f"DELETE FROM {table} WHERE rate_id = %s;", (rate_id,))
-                    message = "Đã xóa mức giá."
+                    message = "Đã xóa mức giá khỏi danh sách áp dụng; lịch sử giao dịch đã được lưu riêng."
                 else:
                     if kind == "both":
                         if found_kind != "parking" or old_rate.get("service_type") != "both":
